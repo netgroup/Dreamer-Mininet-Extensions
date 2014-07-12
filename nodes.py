@@ -152,6 +152,20 @@ class PrivateHost( Host ):
 # Convenience aliases
 findRemounts = PrivateHost.findRemounts
 
+# Simple Host with defaultVia
+class IPHost(Host):
+
+	def __init__(self, name, *args, **kwargs ):
+		Host.__init__( self, name, *args, **kwargs )
+	
+	def start(self, defaultVia):
+		info("%s " % self.name)
+		data = defaultVia.split("#")
+		gw = data[0].split("/")[0]
+		intf = data[1]
+		self.cmd( 'ip route del default' )
+		self.cmd( 'route add default gw %s %s' %(gw, intf) )
+
 # Class that inherits from PrivateHost and extends it with 
 # OSHI functionalities
 class OSHI(PrivateHost):
@@ -215,7 +229,7 @@ class LegacyL2Switch(OVSKernelSwitch):
 	
 	def start( self, controllers ):
 		OVSKernelSwitch.start(self, controllers)
-		LegacyL2Switch.prio += 1
+		LegacyL2Switch.priority += 1
 		self.cmd( 'ovs-vsctl set Bridge', self.name,\
 						'stp_enable=true',\
 						'other_config:stp-priority=%d' % LegacyL2Switch.priority )

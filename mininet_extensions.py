@@ -33,7 +33,7 @@ from collections import defaultdict
 from mininet.net import Mininet
 from mininet.node import RemoteController, Node
 from mininet.log import lg, info
-from nodes import OSHI, Router, LegacyL2Switch
+from nodes import OSHI, Router, LegacyL2Switch, IPHost
 from utility import fixIntf
 
 
@@ -49,9 +49,11 @@ class MininetOSHI(Mininet):
 		self.cr_oshis = []
 		self.pe_oshis = []
 		self.ce_routers = []
+		self.ctrls = []
 		self.nodes_in_rn = []
 		self.node_to_data = defaultdict(list)
 		self.node_to_node = {}
+		self.node_to_default_via = {}
 		self.verbose = verbose
 		lg.setLogLevel('info')
 		
@@ -89,12 +91,11 @@ class MininetOSHI(Mininet):
 	# Create and Add a new Remote Controller
 	# if it is in the rootnamespace, save it in
 	# nodes_in_rn array
-	def addController(self, name=None, ip="127.0.0.1" ,tcp_port=6633, in_namespace=True):
+	def addController(self, name=None, ip="127.0.0.1" ,tcp_port=6633):
 		if not name:
 			name = self.newCtrlName()
-		ctrl = Mininet.addController(self, name, ip=ip, port=tcp_port)
-		if in_namespace:
-			self.nodes_in_rn.append(ctrl)
+		ctrl = Mininet.addHost(self, name, cls=IPHost)
+		self.ctrls.append(ctrl)
 		return ctrl
 
 	# XXX TESTED
@@ -113,7 +114,7 @@ class MininetOSHI(Mininet):
 	def addCeRouter(self, name=None):
 		if not name:
 			name = self.newCeName()
-		ce_router = Mininet.addHost(self, name)
+		ce_router = Mininet.addHost(self, name, cls=IPHost)
 		self.ce_routers.append(ce_router)
 		return ce_router
 
@@ -139,15 +140,29 @@ class MininetOSHI(Mininet):
 		if properties.ingr.type != None:
 			self.node_to_node[lhs.name]=rhs.name
 			self.node_to_node[rhs.name]=lhs.name
+		self.node_to_default_via[lhs.name]= "%s#%s" %(properties.ipRHS, link.intf1.name)
+		self.node_to_default_via[rhs.name]= "%s#%s" %(properties.ipLHS, link.intf2.name)
 		return link
 
+	def configHosts( self ):
+		"Configure a set of hosts."
+		print "QUI"
+		for host in self.hosts:
+			info( host.name + ' ' )
+			host.cmd( 'ifconfig lo up' )
+		info( '\n' )
+
 	def start(self):
+
 		for node in self.nodes_in_rn:
 			fixIntf(node)
 		root = Node( 'root', inNamespace=False )
 		root.cmd('service network-manager restart')
 		info("*** Restarting Network Manager\n")
 		time.sleep(10)
+
+
+
 		if not self.built:
 			self.build()
 		info( '*** Starting %s cr oshis\n' % len(self.cr_oshis) )
@@ -158,9 +173,14 @@ class MininetOSHI(Mininet):
 		for pe_oshi in self.pe_oshis:
 			pe_oshi.start()
 		info( '\n' )
-		info( '*** Starting %s in band controllers\n' % len(self.switches) )
-		for controller in self.controllers:
-			controller.start()
+		info( '*** Starting %s in band controllers\n' % len(self.ctrls) )
+		for controller in self.ctrls:
+			controller.start(self.node_to_default_via[controller.name])
+		info( '\n' )
+		info( '*** Starting %s ce routers\n' % len(self.ce_routers) )
+		for ce_router in self.ce_routers:
+			ce_router.start(self.node_to_default_via[ce_router.name])
+		info( '\n' )
 		info( '*** Starting %s switches\n' % len( self.switches ) )
 		for switch in self.switches:
 			info( switch.name + ' ')
