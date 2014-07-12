@@ -30,7 +30,13 @@
 # because some thing don't work properly (for example xterm)
 
 from mininet.node import Host, OVSKernelSwitch
+from mininet.util import errFail, quietRun
+from mininet.log import info
+from os.path import realpath
 
+from utility import MNRUNDIR, unmountAll
+
+# XXX TESTED
 # Class that inherits from Host and extends it with 
 # the private dirs functionalities
 class PrivateHost( Host ):
@@ -151,33 +157,39 @@ findRemounts = PrivateHost.findRemounts
 class OSHI(PrivateHost):
 
 	dpidLen = 16
-
+	
+	# XXX TESTED
 	def __init__(self, name, loopback, *args, **kwargs ):
 		dirs = ['/var/log/', '/var/log/quagga', '/var/run', '/var/run/quagga', '/var/run/openvswitch']
 		PrivateHost.__init__(self, name, privateDirs=dirs, *args, **kwargs )
 		self.loopback = loopback
 		self.dpid = self.loopbackDpid(self.loopback, "00000000")
 	
+	# XXX TESTED
 	def loopbackDpid(self, loopback, extrainfo):
-        splitted_loopback = loopback.split('.')
-        hexloopback = '{:02X}{:02X}{:02X}{:02X}'.format(*map(int, splitted_loopback))
-        dpid = "%s%s" %(extrainfo, hexloopback)
-        if len(dpid)>16:
-            print "Unable To Derive DPID From Loopback and ExtraInfo";
-            sys.exit(-1)
-        return dpid
+		splitted_loopback = loopback.split('.')
+		hexloopback = '{:02X}{:02X}{:02X}{:02X}'.format(*map(int, splitted_loopback))
+		dpid = "%s%s" %(extrainfo, hexloopback)
+		if len(dpid)>16:
+			print "Unable To Derive DPID From Loopback and ExtraInfo";
+			sys.exit(-1)
+		return dpid
 
-    def defaultDpid( self ):
-        "Derive dpid from switch name, s1 -> 1"
-        try:
-            dpid = int( re.findall( r'\d+', self.name )[ 0 ] )
-            dpid = hex( dpid )[ 2: ]
-            dpid = '0' * ( self.dpidLen - len( dpid ) ) + dpid
-            return dpid
-        except IndexError:
-            raise Exception( 'Unable to derive default datapath ID - '
-                             'please either specify a dpid or use a '
-                             'canonical switch name such as s23.' )
+	# XXX TESTED
+	def defaultDpid( self ):
+		"Derive dpid from switch name, s1 -> 1"
+		try:
+			dpid = int( re.findall( r'\d+', self.name )[ 0 ] )
+			dpid = hex( dpid )[ 2: ]
+			dpid = '0' * ( self.dpidLen - len( dpid ) ) + dpid
+			return dpid
+		except IndexError:
+			raise Exception( 'Unable to derive default datapath ID - '
+							'please either specify a dpid or use a '
+							'canonical switch name such as s23.' )
+
+	def start( self ):
+		info("%s " % self.name)
 
 # Class that inherits from PrivateHost and extends it with 
 # Router functionalities
@@ -188,17 +200,25 @@ class Router(PrivateHost):
 		PrivateHost.__init__(self, name, privateDirs=dirs, *args, **kwargs )
 		self.loopback = loopback
 
+# XXX TESTED
 # Class that inherits from OVSKernelSwitch and acts
-# like a LegacyL2Switch
+# like a LegacyL2Switch. We enable also the STP.
 class LegacyL2Switch(OVSKernelSwitch):
-
+	
+	priority = 1000
+	
 	def __init__(self, name, **params ):	
 		failMode='standalone'
 		datapath='kernel'
 		OVSKernelSwitch.__init__(self, name, failMode, datapath, **params)
 
-
-
-
-
-
+	
+	def start( self, controllers ):
+		OVSKernelSwitch.start(self, controllers)
+		LegacyL2Switch.prio += 1
+		self.cmd( 'ovs-vsctl set Bridge', self.name,\
+						'stp_enable=true',\
+						'other_config:stp-priority=%d' % LegacyL2Switch.priority )
+		for intf in self.intfList():
+			if 'lo' not in intf.name:
+				self.cmd( 'ovs-vsctl set Port %s other_config:stp-path-cost=1' % intf.name)
