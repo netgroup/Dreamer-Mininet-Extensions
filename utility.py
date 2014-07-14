@@ -107,13 +107,13 @@ class PropertiesGenerator(object):
 				print "ERROR Not Allowed Name (%s,%s)" %(link[0],link[1])
 				sys.exit(-2)
 
-			a = re.search(r'cro\d+$', link[1])
-			b = re.search(r'peo\d+$', link[1])
-			c = re.search(r'ctr\d+$', link[1])
-			d = re.search(r'swi\d+$', link[1])
-			e = re.search(r'cer\d+$', link[1])
+			f = re.search(r'cro\d+$', link[1])
+			g = re.search(r'peo\d+$', link[1])
+			h = re.search(r'ctr\d+$', link[1])
+			i = re.search(r'swi\d+$', link[1])
+			l = re.search(r'cer\d+$', link[1])
 			
-			if a is None and b is None and c is None and d is None and e is None:
+			if f is None and g is None and h is None and i is None and l is None:
 				print "ERROR Not Allowed Name (%s,%s)" %(link[0],link[1])
 				sys.exit(-2)
 				
@@ -121,14 +121,19 @@ class PropertiesGenerator(object):
 			ipRHS = None
 			ingrType = None
 			ingrData = None
-			if 'swi' not in link[0]:
+			OSPFnet=None
+
+			if d is None:
 				ipLHS = "%s/24" %(hosts.pop(0).__str__())
-			if 'swi' not in link[1]:
+			if i is None:
 				ipRHS = "%s/24" %(hosts.pop(0).__str__())
-			if ('peo' in link[0] or 'peo' in link[1]) and ('cer' in link[0] or 'cer' in link[1]):
+			if (b is not None or g is not None) and (e is not None or l is not None):
 				ingrType = "INGRB"
 				ingrData = None
-			linkproperties = LinkProperties(ipLHS, ipRHS, ingrType, ingrData, net.__str__())
+			if ipLHS is not None or ipRHS is not None:
+				OSPFnet = OSPFNetwork(net.__str__())
+
+			linkproperties = LinkProperties(ipLHS, ipRHS, ingrType, ingrData, OSPFnet)
 			if self.verbose == True:			
 				print linkproperties
 			output.append(linkproperties)
@@ -189,6 +194,21 @@ class PropertiesGenerator(object):
 				print vertexproperties
 			output.append(vertexproperties)
 		return output
+
+class OSPFNetwork: 
+	
+	def __init__(self, net, costLHS="1", costRHS="1", helloLHS="5", helloRHS="5", area="0.0.0.0"):
+		temp = net.split("/")
+		self.net = temp[0]
+		self.netbit = temp[1]
+		self.costLHS = costLHS
+		self.costRHS = costRHS
+		self.helloLHS = helloLHS
+		self.helloRHS = helloRHS
+		self.area = area
+
+	def __str__(self):
+		return "{'net':'%s', 'nebit': %s, 'costLHS':'%s', 'costRHS':'%s', 'helloLHS':'%s', 'helloRHS':'%s','area':'%s'}" %(self.net, self.netbit, self.costLHS, self.costRHS, self.helloLHS, self.helloRHS, self.area)
 
 # XXX TESTED
 class LinkProperties(object):

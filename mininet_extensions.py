@@ -28,13 +28,15 @@
 
 import sys
 import time
+import subprocess
 from collections import defaultdict
 
 from mininet.net import Mininet
 from mininet.node import RemoteController, Node
-from mininet.log import lg, info
+from mininet.log import lg, info, error
+from mininet.util import quietRun
 from nodes import OSHI, Router, LegacyL2Switch, IPHost
-from utility import fixIntf
+from utility import fixIntf, unmountAll
 
 
 # TODO
@@ -42,6 +44,9 @@ from utility import fixIntf
 
 
 class MininetOSHI(Mininet):
+
+	zebraPath = '/usr/lib/quagga/zebra'
+	ospfdPath = '/usr/lib/quagga/ospfd'
 
 	# XXX TESTED
 	def __init__(self, verbose=False):
@@ -56,6 +61,7 @@ class MininetOSHI(Mininet):
 		self.node_to_default_via = {}
 		self.verbose = verbose
 		lg.setLogLevel('info')
+		self.checkQuagga()
 		
 	# XXX TESTED
 	# Create and Add a new OSHI
@@ -146,22 +152,44 @@ class MininetOSHI(Mininet):
 
 	def configHosts( self ):
 		"Configure a set of hosts."
-		print "QUI"
+
 		for host in self.hosts:
 			info( host.name + ' ' )
 			host.cmd( 'ifconfig lo up' )
 		info( '\n' )
 
-	def start(self):
+	def fixEnvironment(self):
+		
+		info("*** Fix environment\n")
 
 		for node in self.nodes_in_rn:
 			fixIntf(node)
 		root = Node( 'root', inNamespace=False )
+		
+		info("*** Stop unwanted traffic\n")
+		root.cmd('stop avahi-daemon')
+		root.cmd('killall dhclient')
+
+		info("*** Kill old processes\n")
+		root.cmd('killall zebra')
+		root.cmd('killall ospfd')
+	
+		cfile = '/etc/environment'
+	  	line1 = 'VTYSH_PAGER=more\n'
+	  	config = open( cfile ).read()
+	  	if ( line1 ) not in config:
+			info( '*** Adding %s to %s\n' %(line1.strip(), 'to', cfile))
+			with open( cfile, 'a' ) as f:
+		  		f.write( line1 )
+		  	f.close();
+		
 		root.cmd('service network-manager restart')
-		info("*** Restarting Network Manager\n")
+		info("*** Restart Network Manager\n")
 		time.sleep(10)
 
+	def start(self):
 
+		self.fixEnvironment()
 
 		if not self.built:
 			self.build()
@@ -187,9 +215,67 @@ class MininetOSHI(Mininet):
 			switch.start( [] )
 		info( '\n' )
 
-	
-	
-	
+	def cleanEnvironment(self):
+		
+		info("*** Clean environment\n")
+		subprocess.call(["sudo", "mn", "-c"], stdout=None, stderr=None)
+		
+		root = Node( 'root', inNamespace=False )
+		
+		info("*** Restart network-manager\n")
+		root.cmd('service network-manager restart')
+		
+		info("*** Kill all processes started\n")
+		root.cmd('killall ovsdb-server')
+		root.cmd('killall ovs-vswitchd')
+		root.cmd('killall zebra')
+		root.cmd('killall ospfd')
+
+		info("*** Restart Avahi and Open vSwitch\n")	
+		root.cmd('start avahi-daemon') 
+		root.cmd('/etc/init.d/openvswitchd start') 
+
+		info('*** Unmounting host bind mounts\n')
+		unmountAll()
+
+	def stop(self):
+
+		if self.terms:
+		    info( '*** Stopping %i terms\n' % len( self.terms ) )
+		    self.stopXterms()
+		info( '*** Stopping %i switches\n' % len( self.switches ) )
+		for switch in self.switches:
+		    info( switch.name + ' ' )
+		    switch.stop()
+		info( '\n' )
+		info( '*** Stopping %i hosts\n' % len( self.hosts ) )
+		for host in self.hosts:
+		    info( host.name + ' ' )
+		    host.terminate()
+		
+		self.cleanEnvironment()
+
+		info( '*** Done\n' )
+
+	def checkQuagga(self):
+		root = Node( 'root', inNamespace=False )
+		zebra = root.cmd('ls %s 2> /dev/null | wc -l' % self.zebraPath)
+		if '1' not in zebra:
+			error( 'Cannot find required executable zebra\nPlease make sure that Zebra is properly installed in ' + self.zebraPath + '\n'
+				   'Otherwise change zebraPath variable according to your configuration\n' )
+			exit( 1 )
+		ospfd = root.cmd('ls %s 2> /dev/null | wc -l' % self.ospfdPath)
+		if '1' not in ospfd:
+			error( 'Cannot find required executable ospfd\nPlease make sure that OSPFD is properly installed in ' + self.ospfdPath + '\n'
+				   'Otherwise change ospfdPath variable according to your configuration\n' )
+			exit( 1 )
+
+	def checkVllfeasibility(self, lhs, rhs):
+		if lhs not in self.ce_routers or rhs not in self.ce_routers:
+			error("Error misconfiguration Virtual Leased Line\n")
+			error("Error cannot connect %s to %s\n" % (lhs, rhs))
+			sys.exit(2)	
+
 	# Utility functions to generate
 	# automatically new names
 

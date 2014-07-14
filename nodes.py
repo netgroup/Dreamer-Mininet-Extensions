@@ -205,6 +205,10 @@ class OSHI(PrivateHost):
 	def start( self ):
 		info("%s " % self.name)
 
+	def terminate( self ):
+		Host.terminate(self)
+		
+
 # Class that inherits from PrivateHost and extends it with 
 # Router functionalities
 class Router(PrivateHost):

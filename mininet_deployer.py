@@ -3,7 +3,6 @@
 from mininet_extensions import MininetOSHI
 from utility import unmountAll, PropertiesGenerator
 from mininet.cli import CLI
-import subprocess
 
 
 
@@ -153,5 +152,4 @@ if __name__ == '__main__':
 	CLI(net)
 	net.stop()
 
-	subprocess.call(["sudo", "mn", "-c"], stdout=None, stderr=None)
 	unmountAll()
