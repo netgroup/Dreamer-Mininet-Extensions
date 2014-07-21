@@ -6,6 +6,7 @@ from mininet.cli import CLI
 
 
 
+
 if __name__ == '__main__':
 
 	verbose=True
@@ -13,11 +14,15 @@ if __name__ == '__main__':
 	generator = PropertiesGenerator(False)
 	cr_os = ["cro1","cro2","cro3"]
 	pe_os = ["peo1","peo2","peo3"]
-	ctrls = ["ctr1","ctr2","ctr3"]
+	ctrls = ["ctr1"]
 	sws = ["swi1","swi2","swi3"]
 	ce_os = ["cer1","cer2","cer3"]
 
-	net1 = [("cro1","swi1"),("swi2","cro2"),("cro3","swi3"),("swi2","swi3"),("swi3","swi1"), ("swi2","swi1")]
+	#net1 = [("cro1","cro2")]
+	#net2 = [("cro2","cro3")]
+	#net3 = [("cro3","cro1")]
+
+	net1 = [("cro1","swi1"),("swi1","cro1"),("swi2","cro2"),("cro3","swi3"),("swi2","swi3"),("swi3","swi1"), ("swi2","swi1")]
 	net2 = [("peo1","cro1")]
 	net3 = [("cro2","peo2")]
 	net4 = [("peo3","cro3")]
@@ -25,8 +30,6 @@ if __name__ == '__main__':
 	net6 = [("cer2","peo2")]
 	net7 = [("cer3","peo3")]
 	net8 = [("cro1","ctr1")]
-	net9 = [("ctr2","cro2")]
-	net10 = [("cro3","ctr3")]
 
 	vlls = [("cer1","cer2"), ("cer2","cer3"), ("cer3","cer1")]
 	
@@ -44,8 +47,12 @@ if __name__ == '__main__':
 	net6_properties = generator.getLinksProperties(net6)
 	net7_properties = generator.getLinksProperties(net7)
 	net8_properties = generator.getLinksProperties(net8)
-	net9_properties = generator.getLinksProperties(net9)
-	net10_properties = generator.getLinksProperties(net10)
+	#net9_properties = generator.getLinksProperties(net9)
+	#net10_properties = generator.getLinksProperties(net10)
+	
+	# XXX Ctrl special case
+	net8_properties[0].ingr.type = "INGRB"
+	net8_properties[0].ingr.data = None
 
 	vlls_properties = []
 	for vll in vlls:
@@ -69,7 +76,7 @@ if __name__ == '__main__':
 		i = i + 1
 	print "*** Create Controllers"
 	i = 0
-	for i in range(0, len(cr_os)):
+	for i in range(0, len(ctrls)):
 		ctrl = net.addController(name = ctrls[i])
 		i = i + 1
 	print "*** Create Customer Edge Router"
@@ -134,7 +141,7 @@ if __name__ == '__main__':
 		net.addLink(lhs, rhs, net8_properties[i])
 		i = i + 1
 
-	i = 0
+	"""i = 0
 	for link in net9:
 		lhs = net.getNodeByName(link[0])
 		rhs = net.getNodeByName(link[1])
@@ -146,10 +153,17 @@ if __name__ == '__main__':
 		lhs = net.getNodeByName(link[0])
 		rhs = net.getNodeByName(link[1])
 		net.addLink(lhs, rhs, net10_properties[i])
+		i = i + 1"""
+
+	net.addCoexistenceMechanism("COEXB", 0)
+
+	i = 0
+	for vll in vlls:
+		lhs_cer = net.getNodeByName(vll[0])
+		rhs_cer = net.getNodeByName(vll[1])
+		net.addVLL(lhs_cer, rhs_cer, vlls_properties[i])
 		i = i + 1
 	
 	net.start()
 	CLI(net)
 	net.stop()
-
-	unmountAll()

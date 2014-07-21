@@ -121,7 +121,7 @@ class PropertiesGenerator(object):
 			ipRHS = None
 			ingrType = None
 			ingrData = None
-			OSPFnet=None
+			OSPFnet=OSPFNetwork("0.0.0.0/32")
 
 			if d is None:
 				ipLHS = "%s/24" %(hosts.pop(0).__str__())
@@ -228,7 +228,10 @@ class VLLProperties(object):
 	def __init__(self, ipLHS, ipRHS, net):
 		self.ipLHS = ipLHS
 		self.ipRHS = ipRHS
-		self.net = net
+		temp = net.split("/")
+		self.net = temp[0]
+		self.netbit = temp[1]
+		
 
 	def __str__(self):
 		return "{'ipLHS':'%s', 'ipRHS':'%s', 'net':'%s'}" %(self.ipLHS, self.ipRHS, self.net)
@@ -310,5 +313,3 @@ def fixNetworkManager(intf):
 		with open( cfile, 'a' ) as f:
 	  		f.write( line1 )
 	  	f.close();
-
-
