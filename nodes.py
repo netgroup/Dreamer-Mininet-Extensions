@@ -44,7 +44,7 @@ from utility import MNRUNDIR, unmountAll
 from coexistence_mechanisms import *
 from ingress_classifications import *
 
-# XXX TESTED
+
 # Class that inherits from Host and extends it with 
 # the private dirs functionalities
 class PrivateHost( Host ):
@@ -196,7 +196,7 @@ class OSHI(PrivateHost):
 
 	OF_V = None #"OpenFlow13"
 	
-	# XXX TESTED
+	
 	def __init__(self, name, loopback, *args, **kwargs ):
 		dirs = ['/var/log/', '/var/log/quagga', '/var/run', '/var/run/quagga', '/var/run/openvswitch']
 		PrivateHost.__init__(self, name, privateDirs=dirs, *args, **kwargs )
@@ -208,7 +208,7 @@ class OSHI(PrivateHost):
 			self.checkQuagga()
 			OSHI.checked = True
 	
-	# XXX TESTED
+	
 	def loopbackDpid(self, loopback, extrainfo):
 		splitted_loopback = loopback.split('.')
 		hexloopback = '{:02X}{:02X}{:02X}{:02X}'.format(*map(int, splitted_loopback))
@@ -218,7 +218,7 @@ class OSHI(PrivateHost):
 			sys.exit(-1)
 		return dpid
 
-	# XXX TESTED
+	
 	def defaultDpid( self ):
 		"Derive dpid from switch name, s1 -> 1"
 		try:
@@ -258,7 +258,7 @@ class OSHI(PrivateHost):
 			error("ERROR coexistence is {}\n")
 			sys.exit(-2)
 
-		lo_data = {'intfname':'lo', 'ip':'%s/32' %(self.loopback), 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':self.loopback, 'netbit':32, 'cost':1, 'hello':5, 'area':'0.0.0.0'}}
+		lo_data = {'intfname':'lo', 'ip':'%s' %(self.loopback), 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':self.loopback, 'netbit':32, 'cost':1, 'hello':5, 'area':'0.0.0.0'}}
 
 		self.initial_configuration(controllers)
 		self.configure_ovs(intfs_to_data, coex)
@@ -426,13 +426,14 @@ class OSHI(PrivateHost):
 			cost = intf['net']['cost']
 			hello_int = intf['net']['hello']
 			ip = intf['ip']
+			netbit = intf['net']['netbit']
 
 			
 			ospfd_conf.write("interface " + intfname + "\n")
 			ospfd_conf.write("ospf cost %s\n" % cost)
 			ospfd_conf.write("ospf hello-interval %s\n\n" % hello_int)
 			zebra_conf.write("interface " + intfname + "\n")
-			zebra_conf.write("ip address %s\n" % ip)
+			zebra_conf.write("ip address %s/%s\n" % (ip, netbit))
 			zebra_conf.write("link-detect\n\n")
 
 			i = i + 1
@@ -450,7 +451,7 @@ class OSHI(PrivateHost):
 		ospfd_conf.write("ospf cost %s\n" % cost)
 		ospfd_conf.write("ospf hello-interval %s\n\n" % hello_int)
 		zebra_conf.write("interface " + intfname + "\n")
-		zebra_conf.write("ip address %s\n" %(ip))
+		zebra_conf.write("ip address %s/%s\n" %(ip, netbit))
 		zebra_conf.write("link-detect\n\n")
 		ospfd_conf.write("router ospf\n")
 		ospfd_conf.write("network %s/%s area %s\n" %(net, netbit, area))
@@ -512,7 +513,7 @@ class Router(PrivateHost):
 		PrivateHost.__init__(self, name, privateDirs=dirs, *args, **kwargs )
 		self.loopback = loopback
 
-# XXX TESTED
+
 # Class that inherits from OVSKernelSwitch and acts
 # like a LegacyL2Switch. We enable also the STP.
 class LegacyL2Switch(OVSKernelSwitch):

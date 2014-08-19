@@ -35,7 +35,7 @@ from ipaddress import *
 import sys
 import re
 
-# XXX TESTED
+
 class LoopbackAllocator(object):
 
 	def __init__(self):	
@@ -47,7 +47,7 @@ class LoopbackAllocator(object):
 		host = self.hosts.pop(0)
 		return host.__str__()
 	
-# XXX TESTED
+
 class NetAllocator(object):
 
 	ipnet = "10.0.0.0/255.0.0.0".decode('unicode-escape')
@@ -72,7 +72,7 @@ class NetAllocator(object):
 				sys.exit(-2)
 		return net
 
-# XXX TESTED
+
 class PropertiesGenerator(object):
 
 	allowed_name = ["cro","peo","ctr","swi","cer"]
@@ -82,7 +82,6 @@ class PropertiesGenerator(object):
 		self.netAllocator = NetAllocator()
 		self.loopbackAllocator = LoopbackAllocator()
 
-	# TODO Da importare
 	def getLinksProperties(self, links):
 		output = []
 		net = self.netAllocator.next_netAddress()
@@ -124,9 +123,9 @@ class PropertiesGenerator(object):
 			OSPFnet=OSPFNetwork("0.0.0.0/32")
 
 			if d is None:
-				ipLHS = "%s/24" %(hosts.pop(0).__str__())
+				ipLHS = hosts.pop(0).__str__()
 			if i is None:
-				ipRHS = "%s/24" %(hosts.pop(0).__str__())
+				ipRHS = hosts.pop(0).__str__()
 			if (b is not None or g is not None) and (e is not None or l is not None):
 				ingrType = "INGRB"
 				ingrData = None
@@ -139,7 +138,6 @@ class PropertiesGenerator(object):
 			output.append(linkproperties)
 		return output
 
-	# TODO Da importare
 	def getVLLsProperties(self, vll):
 		net = self.netAllocator.next_netAddress()
 		if self.verbose == True:		
@@ -162,22 +160,17 @@ class PropertiesGenerator(object):
 			sys.exit(-2)
 
 		
-		ipLHS = "%s/24" %(hosts.pop(0).__str__())
-		ipRHS = "%s/24" %(hosts.pop(0).__str__())
+		ipLHS = "%s" %(hosts.pop(0).__str__())
+		ipRHS = "%s" %(hosts.pop(0).__str__())
 		
 		vllproperties = VLLProperties(ipLHS, ipRHS, net.__str__())
 		if self.verbose == True:			
 			print vllproperties
 		return vllproperties
 		
-	# TODO Da Importare
 	def getVerticesProperties(self, nodes):
 		output = []
 		for node in nodes:
-			to_verifiy = node[:3]
-			if to_verifiy not in self.allowed_name or node[3].isalpha():
-				print "ERROR Not Allowed Name %s" %node
-				sys.exit(-2)
 			if self.verbose == True:
 				print node
 			host = None
@@ -210,7 +203,7 @@ class OSPFNetwork:
 	def __str__(self):
 		return "{'net':'%s', 'nebit': %s, 'costLHS':'%s', 'costRHS':'%s', 'helloLHS':'%s', 'helloRHS':'%s','area':'%s'}" %(self.net, self.netbit, self.costLHS, self.costRHS, self.helloLHS, self.helloRHS, self.area)
 
-# XXX TESTED
+
 class LinkProperties(object):
 
 	def __init__(self, ipLHS, ipRHS, ingrType, ingrData, net):
@@ -222,21 +215,17 @@ class LinkProperties(object):
 	def __str__(self):
 		return "{'ipLHS':'%s', 'ipRHS':'%s', 'ingr':'%s', 'net':'%s'}" %(self.ipLHS, self.ipRHS, self.ingr, self.net)
 
-# XXX TESTED
+
 class VLLProperties(object):
 
 	def __init__(self, ipLHS, ipRHS, net):
 		self.ipLHS = ipLHS
 		self.ipRHS = ipRHS
-		temp = net.split("/")
-		self.net = temp[0]
-		self.netbit = temp[1]
-		
+		self.net = net		
 
 	def __str__(self):
 		return "{'ipLHS':'%s', 'ipRHS':'%s', 'net':'%s'}" %(self.ipLHS, self.ipRHS, self.net)
 
-# XXX TESTED
 class VertexProperties(object):
 	
 	def __init__(self, loopback):
@@ -245,8 +234,6 @@ class VertexProperties(object):
 	def __str__(self):
 		return "{'loopback':'%s'}" %(self.loopback)
 
-# XXX TESTED
-# TODO Da importare
 class IngressData(object):
 
 	def __init__(self, ingrtype, ingrdata):
@@ -260,7 +247,7 @@ class IngressData(object):
 # Real path of OSHI's dir
 MNRUNDIR = realpath( '/var/run/mn' )
 
-# XXX TESTED
+
 # Take the mounted points of the root machine
 def mountPoints():
     "Return list of mounted file systems"
@@ -275,7 +262,7 @@ def mountPoints():
         mounts.append( mount )
     return mounts
 
-# XXX TESTED 
+ 
 # Utility Function for unmount all the dirs
 def unmountAll( rootdir=MNRUNDIR ):
     "Unmount all mounts under a directory tree"

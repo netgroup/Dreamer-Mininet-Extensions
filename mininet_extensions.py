@@ -48,7 +48,7 @@ class MininetOSHI(Mininet):
 	zebraPath = '/usr/lib/quagga/zebra'
 	ospfdPath = '/usr/lib/quagga/ospfd'
 
-	# XXX TESTED
+	
 	def __init__(self, verbose=False):
 
 		Mininet.__init__(self, switch=LegacyL2Switch, build=False)
@@ -69,7 +69,7 @@ class MininetOSHI(Mininet):
 		self.vllcfg = open("vll_pusher.cfg", "w")
 		
 		
-	# XXX TESTED
+	
 	# Create and Add a new OSHI
 	def addOSHI(self, params, name=None):
 		loopback = params.loopback
@@ -79,7 +79,7 @@ class MininetOSHI(Mininet):
 		oshi = Mininet.addHost(self, name, cls=OSHI, loopback=loopback)
 		return oshi
 
-	# XXX TESTED
+	
 	# Create and Add a new OSHI insert
 	# it in the Core OSHI set
 	def addCrOSHI(self, params, name=None):
@@ -89,7 +89,7 @@ class MininetOSHI(Mininet):
 		self.cr_oshis.append(oshi)
 		return oshi
 	
-	# XXX TESTED
+	
 	# Create and Add a new OSHI insert it
 	# in the Provider Edge OSHI set
 	def addPeOSHI(self, params, name=None):
@@ -99,7 +99,7 @@ class MininetOSHI(Mininet):
 		self.pe_oshis.append(oshi)
 		return oshi
 
-	# XXX TESTED
+	
 	# Create and Add a new Remote Controller
 	# if it is in the rootnamespace, save it in
 	# nodes_in_rn array
@@ -110,17 +110,8 @@ class MininetOSHI(Mininet):
 		self.ctrls.append(ctrl)
 		return ctrl
 
-	# XXX TESTED
-	# Create and Add a new LegacyL2Switch
-	# save it in nodes_in_rn array
-	def addSwitch(self, name=None):
-		if not name:
-			name = self.newSwitchName()
-		switch = Mininet.addSwitch(self, name)
-		self.nodes_in_rn.append(switch)
-		return switch
 
-	# XXX TESTED
+	
 	# Create and Add a new Customer Edge Router.
 	# In our case it is a simple host
 	def addCeRouter(self, name=None):
@@ -143,7 +134,7 @@ class MininetOSHI(Mininet):
 		self.coex['coex_type']=coex_type
 		self.coex['coex_data']=coex_data
 
-	# XXX TESTED
+	
 	# Add Link to MininetOSHI
 	def addLink(self, lhs, rhs, properties):
 		info("*** Connect %s to %s\n" %(lhs.name, rhs.name))
@@ -153,15 +144,15 @@ class MininetOSHI(Mininet):
 		data_rhs = { 'intfname':link.intf2.name, 'ip':properties.ipRHS, 'ingrtype':properties.ingr.type, 'ingrdata':properties.ingr.data, 'net':{ 'net':properties.net.net, 'netbit':properties.net.netbit, 'cost':properties.net.costRHS, 'hello':properties.net.helloRHS, 'area':properties.net.area}}
 
 		if properties.ipLHS: 
-			lhs.setIP(ip=properties.ipLHS, intf=link.intf1)
+			lhs.setIP(ip="%s/%s" %(properties.ipLHS, properties.net.netbit), intf=link.intf1)
 		if properties.ipRHS:
-			rhs.setIP(ip=properties.ipRHS, intf=link.intf2)
+			rhs.setIP(ip="%s/%s" %(properties.ipRHS, properties.net.netbit), intf=link.intf2)
 
 		if type(lhs) is InBandController:
-			lhs.ip = properties.ipLHS
+			lhs.ip = "%s/%s" %(properties.ipLHS, properties.net.netbit)
 			lhs.port = 6633 
 		if type(rhs) is InBandController:
-			rhs.ip = properties.ipRHS
+			rhs.ip = "%s/%s" %(properties.ipRHS, properties.net.netbit)
 			rhs.port = 6633 
 
 		self.node_to_data[lhs.name].append(data_lhs)
@@ -169,8 +160,8 @@ class MininetOSHI(Mininet):
 		if properties.ingr.type != None:
 			self.node_to_node[lhs.name]=rhs.name
 			self.node_to_node[rhs.name]=lhs.name
-		self.node_to_default_via[lhs.name]= "%s#%s" %(properties.ipRHS, link.intf1.name)
-		self.node_to_default_via[rhs.name]= "%s#%s" %(properties.ipLHS, link.intf2.name)
+		self.node_to_default_via[lhs.name]= "%s/%s#%s" %(properties.ipRHS, properties.net.netbit, link.intf1.name)
+		self.node_to_default_via[rhs.name]= "%s/%s#%s" %(properties.ipLHS, properties.net.netbit, link.intf2.name)
 		return link
 
 	def addVLL(self, lhs_cer, rhs_cer, properties):
@@ -190,26 +181,28 @@ class MininetOSHI(Mininet):
 
 		link1 = Mininet.addLink(self, lhs_cer, lhs_aos)
 
-		data_lhs_cer = { 'intfname':link1.intf1.name, 'ip':properties.ipLHS, 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':properties.net, 
-		'netbit':properties.netbit, 'cost':1, 'hello':1, 'area':'0.0.0.0'}}
-		data_lhs_aos = { 'intfname':link1.intf2.name, 'ip':'0.0.0.0/32', 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':'0.0.0.0', 
+		temp = properties.net.split("/")
+
+		data_lhs_cer = { 'intfname':link1.intf1.name, 'ip':properties.ipLHS, 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':temp[0], 
+		'netbit':temp[1], 'cost':1, 'hello':1, 'area':'0.0.0.0'}}
+		data_lhs_aos = { 'intfname':link1.intf2.name, 'ip':'0.0.0.0', 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':'0.0.0.0', 
 		'netbit':32, 'cost':1, 'hello':1, 'area':'0.0.0.0'}}
 
 		if properties.ipLHS: 
-			lhs_cer.setIP(ip=properties.ipLHS, intf=link1.intf1)
+			lhs_cer.setIP(ip="%s/%s" %(properties.ipLHS, temp[1]), intf=link1.intf1)
 
 		self.node_to_data[lhs_cer.name].append(data_lhs_cer)
 		self.node_to_data[lhs_aos.name].append(data_lhs_aos)
 
 		link2 = Mininet.addLink(self, rhs_cer, rhs_aos)
 
-		data_rhs_cer = { 'intfname':link2.intf1.name, 'ip':properties.ipRHS, 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':properties.net, 
-		'netbit':properties.netbit, 'cost':1, 'hello':1, 'area':'0.0.0.0'}}
-		data_rhs_aos = { 'intfname':link2.intf2.name, 'ip':'0.0.0.0/32', 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':'0.0.0.0', 
+		data_rhs_cer = { 'intfname':link2.intf1.name, 'ip':properties.ipRHS, 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':temp[0], 
+		'netbit':temp[1], 'cost':1, 'hello':1, 'area':'0.0.0.0'}}
+		data_rhs_aos = { 'intfname':link2.intf2.name, 'ip':'0.0.0.0', 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':'0.0.0.0', 
 		'netbit':32, 'cost':1, 'hello':1, 'area':'0.0.0.0'}}
 
 		if properties.ipRHS:
-			rhs_cer.setIP(ip=properties.ipRHS, intf=link2.intf1)
+			rhs_cer.setIP(ip="%s/%s" %(properties.ipRHS, temp[1]), intf=link2.intf1)
 
   		self.node_to_data[rhs_cer.name].append(data_rhs_cer)
 		self.node_to_data[rhs_aos.name].append(data_rhs_aos)	
@@ -282,11 +275,6 @@ class MininetOSHI(Mininet):
 		for ce_router in self.ce_routers:
 			ce_router.start(self.node_to_default_via[ce_router.name])
 		info( '\n' )
-		info( '*** Starting %s switches\n' % len( self.switches ) )
-		for switch in self.switches:
-			info( switch.name + ' ')
-			switch.start( [] )
-		info( '\n' )
 
 		self.vllcfg.close()
 
@@ -318,11 +306,7 @@ class MininetOSHI(Mininet):
 		if self.terms:
 		    info( '*** Stopping %i terms\n' % len( self.terms ) )
 		    self.stopXterms()
-		info( '*** Stopping %i switches\n' % len( self.switches ) )
-		for switch in self.switches:
-		    info( switch.name + ' ' )
-		    switch.stop()
-		info( '\n' )
+
 		info( '*** Stopping %i hosts\n' % len( self.hosts ) )
 		for host in self.hosts:
 		    info( host.name + ' ' )
@@ -355,11 +339,6 @@ class MininetOSHI(Mininet):
 	def newCtrlName(self):
 		index = str(len(self.controllers) + 1)
 		name = "ctr%s" % index
-		return name
-
-	def newSwitchName(self):
-		index = str(len(self.switches) + 1)
-		name = "swi%s" % index
 		return name
 
 	def newCeName(self):
