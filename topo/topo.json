@@ -1,0 +1,265 @@
+{
+	"vertices": [
+		"CROSHI#01",
+		"CROSHI#02",
+		"PEOSHI#03",
+		"PEOSHI#04",
+		"PEOSHI#05",
+		"CER#06",
+		"CER#07",
+		"CER#08",
+		"CROSHI#09"
+	],
+	"edges": [
+		[
+			"PEOSHI#03",
+			"CROSHI#01",
+			[
+				{
+					"edge_label": "",
+					"vll": false
+				}
+			]
+		],
+		[
+			"CROSHI#01",
+			"PEOSHI#04",
+			[
+				{
+					"edge_label": "",
+					"vll": false
+				}
+			]
+		],
+		[
+			"CROSHI#01",
+			"CROSHI#02",
+			[
+				{
+					"edge_label": "",
+					"vll": false
+				}
+			]
+		],
+		[
+			"CROSHI#02",
+			"PEOSHI#03",
+			[
+				{
+					"edge_label": "",
+					"vll": false
+				}
+			]
+		],
+		[
+			"PEOSHI#04",
+			"CROSHI#02",
+			[
+				{
+					"edge_label": "",
+					"vll": false
+				}
+			]
+		],
+		[
+			"PEOSHI#05",
+			"CROSHI#01",
+			[
+				{
+					"edge_label": "",
+					"vll": false
+				}
+			]
+		],
+		[
+			"PEOSHI#05",
+			"CROSHI#02",
+			[
+				{
+					"edge_label": "",
+					"vll": false
+				}
+			]
+		],
+		[
+			"CER#07",
+			"PEOSHI#04",
+			[
+				{
+					"edge_label": "",
+					"vll": false
+				}
+			]
+		],
+		[
+			"CER#06",
+			"PEOSHI#05",
+			[
+				{
+					"edge_label": "",
+					"vll": false
+				}
+			]
+		],
+		[
+			"CER#08",
+			"PEOSHI#03",
+			[
+				{
+					"edge_label": "",
+					"vll": false
+				}
+			]
+		],
+		[
+			"CROSHI#01",
+			"CROSHI#09",
+			[
+				{
+					"edge_label": "",
+					"vll": false
+				}
+			]
+		],
+		[
+			"CROSHI#09",
+			"PEOSHI#05",
+			[
+				{
+					"edge_label": "",
+					"vll": false
+				}
+			]
+		],
+		[
+			"CROSHI#09",
+			"PEOSHI#04",
+			[
+				{
+					"edge_label": "",
+					"vll": false
+				}
+			]
+		],
+		[
+			"CROSHI#09",
+			"PEOSHI#03",
+			[
+				{
+					"edge_label": "",
+					"vll": false
+				}
+			]
+		],
+		[
+			"CER#07",
+			"CER#08",
+			[
+				{
+					"edge_label": "",
+					"vll": true
+				}
+			]
+		],
+		[
+			"CER#07",
+			"CER#06",
+			[
+				{
+					"edge_label": "",
+					"vll": true
+				}
+			]
+		],
+		[
+			"CER#06",
+			"CER#08",
+			[
+				{
+					"edge_label": "",
+					"vll": true
+				}
+			]
+		]
+	],
+	"pos": {
+		"CROSHI#01": [
+			376,
+			139
+		],
+		"CROSHI#02": [
+			611,
+			23
+		],
+		"PEOSHI#03": [
+			688,
+			138
+		],
+		"PEOSHI#04": [
+			341,
+			53
+		],
+		"PEOSHI#05": [
+			528,
+			291
+		],
+		"CER#06": [
+			539,
+			370
+		],
+		"CER#07": [
+			239,
+			57
+		],
+		"CER#08": [
+			753,
+			187
+		],
+		"CROSHI#09": [
+			175,
+			240
+		]
+	},
+	"node_properties": {
+		"CROSHI#01": {
+			"frozen": false,
+			"loopback": "172.168.0.2"
+		},
+		"CROSHI#02": {
+			"frozen": false,
+			"loopback": "172.168.0.3"
+		},
+		"PEOSHI#03": {
+			"frozen": false,
+			"loopback": "172.168.0.6"
+		},
+		"PEOSHI#04": {
+			"frozen": false,
+			"loopback": "172.168.0.4"
+		},
+		"PEOSHI#05": {
+			"frozen": false,
+			"loopback": "172.168.0.5"
+		},
+		"CER#06": {
+			"frozen": false,
+			"loopback": ""
+		},
+		"CER#07": {
+			"frozen": false,
+			"loopback": ""
+		},
+		"CER#08": {
+			"frozen": false,
+			"loopback": ""
+		},
+		"CROSHI#09": {
+			"frozen": false,
+			"loopback": "172.168.0.1"
+		}
+	},
+	"advanced": {
+		"tunneling": "VXLAN"
+	},
+	"name": "G"
+}
