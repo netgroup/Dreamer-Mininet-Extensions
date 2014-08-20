@@ -296,7 +296,7 @@ class MininetOSHI(Mininet):
 
 		info("*** Restart Avahi and Open vSwitch\n")	
 		root.cmd('start avahi-daemon') 
-		root.cmd('/etc/init.d/openvswitchd start') 
+		root.cmd('/etc/init.d/openvswitch-switch start') 
 
 		info('*** Unmounting host bind mounts\n')
 		unmountAll()
