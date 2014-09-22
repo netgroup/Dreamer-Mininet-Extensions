@@ -38,9 +38,12 @@ import re
 
 class LoopbackAllocator(object):
 
+	loopbacknet = ("172.16.0.0/255.240.0.0").decode('unicode-escape')
+	bit = 32
+
 	def __init__(self):	
 		print "*** Calculating Available Loopback Addresses"
-		self.loopbacknet = (IPv4Network(("172.16.0.0/255.240.0.0").decode('unicode-escape')))
+		self.loopbacknet = (IPv4Network(self.loopbacknet))
 		self.hosts = list(self.loopbacknet.hosts())
 	
 	def next_hostAddress(self):
@@ -51,12 +54,13 @@ class LoopbackAllocator(object):
 class NetAllocator(object):
 
 	ipnet = "10.0.0.0/255.0.0.0".decode('unicode-escape')
+	bit = 24
 	
 	def __init__(self):		
 		print "*** Calculating Available IP Networks"
 		self.ipnet = (IPv4Network(self.ipnet))
-		self.iternets = self.ipnet.subnets(new_prefix=24)
-		self.iternets24 = self.iternets.next().subnets(new_prefix=24)
+		self.iternets = self.ipnet.subnets(new_prefix=self.bit)
+		self.iternets24 = self.iternets.next().subnets(new_prefix=self.bit)
 	
 	def next_netAddress(self):
 		DONE = False
@@ -66,16 +70,53 @@ class NetAllocator(object):
 					net = self.iternets24.next()
 					DONE = True
 				except StopIteration:
-					self.iternets24 = self.iternets.next().subnets(new_prefix=24)
+					self.iternets24 = self.iternets.next().subnets(new_prefix=self.bit)
 			except StopIteration:
 				print "Error IP Net SoldOut"
 				sys.exit(-2)
 		return net
 
+class VTEPAllocator(object):
+
+	vtepnet = ("172.16.0.0/255.240.0.0").decode('unicode-escape')
+	bit = 12
+
+	def __init__(self):	
+		print "*** Calculating Available VTEP Addresses"
+		self.loopbacknet = (IPv4Network(self.vtepnet))
+		self.hosts = list(self.loopbacknet.hosts())
+	
+	def next_hostAddress(self):
+		host = self.hosts.pop(0)
+		return host.__str__()
+
+	def next_vtep(self):
+		host = self.next_hostAddress()
+		mac = self.IPtoMAC(host, '0000')
+		return VTEP("%s/%s" %(host,self.bit), mac)
+				
+
+	def IPtoMAC(self, IP, extrainfo):
+		splitted_IP = IP.split('.')
+		hexIP = '{:02X}{:02X}{:02X}{:02X}'.format(*map(int, splitted_IP))
+		MAC = "%s%s" %(extrainfo, hexIP)
+		if len(MAC)>12:
+			error("Unable To Derive MAC From IP and ExtraInfo\n")
+			sys.exit(-1)
+		return MAC
+
+class VTEP(object):
+
+	def __init__(self, IP, MAC):
+		self.IP = IP
+		self.MAC = MAC
+
+	def __str__(self):
+		return "{'ip':'%s', 'mac':'%s'}" %(self.IP, self.MAC)
 
 class PropertiesGenerator(object):
 
-	allowed_name = ["cro","peo","ctr","swi","cer"]
+	allowed_name = ["cro","peo","ctr","swi","cer","mgm"]
 
 	def __init__(self, verbose):
 		self.verbose = verbose
@@ -101,18 +142,20 @@ class PropertiesGenerator(object):
 			c = re.search(r'ctr\d+$', link[0])
 			d = re.search(r'swi\d+$', link[0])
 			e = re.search(r'cer\d+$', link[0])
+			f = re.search(r'mgm\d+$', link[0])
 			
-			if a is None and b is None and c is None and d is None and e is None:
+			if a is None and b is None and c is None and d is None and e is None and f is None:
 				print "ERROR Not Allowed Name (%s,%s)" %(link[0],link[1])
 				sys.exit(-2)
 
-			f = re.search(r'cro\d+$', link[1])
-			g = re.search(r'peo\d+$', link[1])
-			h = re.search(r'ctr\d+$', link[1])
-			i = re.search(r'swi\d+$', link[1])
-			l = re.search(r'cer\d+$', link[1])
+			g = re.search(r'cro\d+$', link[1])
+			h = re.search(r'peo\d+$', link[1])
+			i = re.search(r'ctr\d+$', link[1])
+			l = re.search(r'swi\d+$', link[1])
+			m = re.search(r'cer\d+$', link[1])
+			n = re.search(r'mgm\d+$', link[1])
 			
-			if f is None and g is None and h is None and i is None and l is None:
+			if g is None and h is None and i is None and l is None and m is None and n is None:
 				print "ERROR Not Allowed Name (%s,%s)" %(link[0],link[1])
 				sys.exit(-2)
 				
@@ -124,9 +167,9 @@ class PropertiesGenerator(object):
 
 			if d is None:
 				ipLHS = hosts.pop(0).__str__()
-			if i is None:
+			if l is None:
 				ipRHS = hosts.pop(0).__str__()
-			if (b is not None or g is not None) and (e is not None or l is not None):
+			if (b is not None or h is not None) and (e is not None or m is not None):
 				ingrType = "INGRB"
 				ingrData = None
 			if ipLHS is not None or ipRHS is not None:
@@ -178,8 +221,9 @@ class PropertiesGenerator(object):
 			c = re.search(r'ctr\d+$', node)
 			d = re.search(r'swi\d+$', node)
 			e = re.search(r'cer\d+$', node)
+			f = re.search(r'mgm\d+$', node)
 			
-			if c is None and d is None and e is None:
+			if c is None and d is None and e is None and f is None:
 				host = self.loopbackAllocator.next_hostAddress()
 				
 			vertexproperties = VertexProperties(host)
@@ -300,3 +344,10 @@ def fixNetworkManager(intf):
 		with open( cfile, 'a' ) as f:
 	  		f.write( line1 )
 	  	f.close();
+
+
+if __name__ == '__main__':
+
+	vtepAlloc = VTEPAllocator()
+	for i in range(0,33):
+		print vtepAlloc.next_vtep()

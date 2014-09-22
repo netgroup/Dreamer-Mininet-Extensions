@@ -166,6 +166,7 @@ def test_properties_generator():
 	ctrls = ["ctr1","ctr2","ctr3"]
 	sws = ["swi1","swi2","swi3"]
 	ce_os = ["cer1","cer2","cer3"]
+	mgm_os = ["mgm1"]
 
 	net1 = [("cro1","swi1"),("swi1","cro2"),("cro3","swi1")]
 	net2 = [("peo1","cro1")]
@@ -174,6 +175,7 @@ def test_properties_generator():
 	net5 = [("cer1","peo1")]
 	net6 = [("cer2","peo2")]
 	net7 = [("cer3","peo3")]
+	net8 = [("cro1","mgm1")]
 	
 	print "Vertices Properties"
 	cr_prop = generator.getVerticesProperties(cr_os)
@@ -206,6 +208,10 @@ def test_properties_generator():
 		print "%s -> %s" %(ce_os[i], ce_property)
 		i = i + 1
 	i = 0
+	mgm_prop = generator.getVerticesProperties(mgm_os)
+	for mgm_property in mgm_prop:
+		print "%s -> %s" %(mgm_os[i], mgm_property)
+		i = i + 1
 	print "###################################################"
 
 	properties = generator.getLinksProperties(net1)
@@ -255,6 +261,12 @@ def test_properties_generator():
 	i = 0
 	for l_property in properties:
 		print "%s -> %s" %(net7[i],l_property)
+		i = i + 1
+	properties = generator.getLinksProperties(net8)
+	print "Net8 Properties"
+	i = 0
+	for l_property in properties:
+		print "%s -> %s" %(net8[i],l_property)
 		i = i + 1
 	print "###################################################"
 

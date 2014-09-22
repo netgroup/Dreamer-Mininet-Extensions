@@ -29,19 +29,16 @@
 import sys
 import time
 import subprocess
+import json
 from collections import defaultdict
 
 from mininet.net import Mininet
 from mininet.node import Node
 from mininet.log import lg, info, error
 from mininet.util import quietRun
-from nodes import OSHI, Router, LegacyL2Switch, IPHost, InBandController
-from utility import fixIntf, unmountAll
-
-
-# TODO
-# call fixintf after the start
-
+from nodes import OSHI, Router, LegacyL2Switch, IPHost, InBandController, VSF
+from utility import fixIntf, unmountAll, VTEPAllocator
+from coexistence_mechanisms import *
 
 class MininetOSHI(Mininet):
 
@@ -51,12 +48,13 @@ class MininetOSHI(Mininet):
 	
 	def __init__(self, verbose=False):
 
-		Mininet.__init__(self, switch=LegacyL2Switch, build=False)
+		Mininet.__init__(self, build=False)
 
 		self.cr_oshis = []
 		self.pe_oshis = []
 		self.ce_routers = []
 		self.ctrls = []
+		self.mgms = []
 		self.nodes_in_rn = []
 		self.node_to_data = defaultdict(list)
 		self.node_to_node = {}
@@ -66,7 +64,16 @@ class MininetOSHI(Mininet):
 		self.verbose = verbose
 		lg.setLogLevel('info')
 
-		self.vllcfg = open("vll_pusher.cfg", "w")
+		self.vlls = []
+
+		self.node_to_pw_data = defaultdict(list)
+		self.pws = []
+
+		self.cer_to_customer = {}
+		self.customer_to_vtepallocator = {}
+
+		self.vsfs = []
+		self.pe_cer_to_vsf = {}
 		
 		
 	
@@ -101,8 +108,6 @@ class MininetOSHI(Mininet):
 
 	
 	# Create and Add a new Remote Controller
-	# if it is in the rootnamespace, save it in
-	# nodes_in_rn array
 	def addController(self, name=None, ip="127.0.0.1" ,tcp_port=6633):
 		if not name:
 			name = self.newCtrlName()
@@ -110,16 +115,31 @@ class MininetOSHI(Mininet):
 		self.ctrls.append(ctrl)
 		return ctrl
 
-
-	
 	# Create and Add a new Customer Edge Router.
 	# In our case it is a simple host
-	def addCeRouter(self, name=None):
+	def addCeRouter(self, cid, name=None):
 		if not name:
 			name = self.newCeName()
 		ce_router = Mininet.addHost(self, name, cls=IPHost)
 		self.ce_routers.append(ce_router)
+
+		#XXX in futuro puo' cambiare
+		temp = int(cid)
+		exist = self.customer_to_vtepallocator.get(cid, None)
+		if not exist:
+			self.customer_to_vtepallocator[cid] = VTEPAllocator()
+		self.cer_to_customer[name]=cid
+
 		return ce_router
+
+	# Create and Add a new Remote Management
+	def addManagement(self, name=None):
+		if not name:
+			name = self.newMgmtName()
+		mgmt = Mininet.addHost(self, name, cls=IPHost, inNamespace=True)
+		self.mgms.append(mgmt)
+		self.nodes_in_rn.append(mgmt)
+		return mgmt
 
 	def addCoexistenceMechanism(self, coex_type, coex_data):
 
@@ -167,54 +187,142 @@ class MininetOSHI(Mininet):
 	def addVLL(self, lhs_cer, rhs_cer, properties):
 		info("*** Connect %s to %s through Vll\n" %(lhs_cer.name, rhs_cer.name))		
 
-		lhs_aos = self.node_to_node[lhs_cer.name]
-		rhs_aos = self.node_to_node[rhs_cer.name]
+		lhs_peo = self.node_to_node[lhs_cer.name]
+		rhs_peo = self.node_to_node[rhs_cer.name]
 
-		lhs_aos = self.getNodeByName(lhs_aos)
-		rhs_aos = self.getNodeByName(rhs_aos)
+		lhs_peo = self.getNodeByName(lhs_peo)
+		rhs_peo = self.getNodeByName(rhs_peo)
 
-		if type(lhs_cer) is not IPHost or type(rhs_cer) is not IPHost or type(lhs_aos) is not OSHI or type(rhs_aos) is not OSHI:
-			error("ERROR cannot provide VLL among %s and %s through %s and %s" %(lhs_cer.name, rhs_cer.name, lhs_aos.name, rhs_aos.name))
+		if type(lhs_cer) is not IPHost or type(rhs_cer) is not IPHost or type(lhs_peo) is not OSHI or type(rhs_peo) is not OSHI:
+			error("ERROR cannot provide VLL among %s and %s through %s and %s" %(lhs_cer.name, rhs_cer.name, lhs_peo.name, rhs_peo.name))
 			sys.exit(-2)
 
-		self.checkVllfeasibility(lhs_cer, rhs_cer)
+		self.checkLLfeasibility(lhs_cer, rhs_cer)
 
-		link1 = Mininet.addLink(self, lhs_cer, lhs_aos)
+		link1 = Mininet.addLink(self, lhs_cer, lhs_peo)
 
 		temp = properties.net.split("/")
 
 		data_lhs_cer = { 'intfname':link1.intf1.name, 'ip':properties.ipLHS, 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':temp[0], 
 		'netbit':temp[1], 'cost':1, 'hello':1, 'area':'0.0.0.0'}}
-		data_lhs_aos = { 'intfname':link1.intf2.name, 'ip':'0.0.0.0', 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':'0.0.0.0', 
+		data_lhs_peo = { 'intfname':link1.intf2.name, 'ip':'0.0.0.0', 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':'0.0.0.0', 
 		'netbit':32, 'cost':1, 'hello':1, 'area':'0.0.0.0'}}
 
 		if properties.ipLHS: 
 			lhs_cer.setIP(ip="%s/%s" %(properties.ipLHS, temp[1]), intf=link1.intf1)
 
 		self.node_to_data[lhs_cer.name].append(data_lhs_cer)
-		self.node_to_data[lhs_aos.name].append(data_lhs_aos)
+		self.node_to_data[lhs_peo.name].append(data_lhs_peo)
 
-		link2 = Mininet.addLink(self, rhs_cer, rhs_aos)
+		link2 = Mininet.addLink(self, rhs_cer, rhs_peo)
 
 		data_rhs_cer = { 'intfname':link2.intf1.name, 'ip':properties.ipRHS, 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':temp[0], 
 		'netbit':temp[1], 'cost':1, 'hello':1, 'area':'0.0.0.0'}}
-		data_rhs_aos = { 'intfname':link2.intf2.name, 'ip':'0.0.0.0', 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':'0.0.0.0', 
+		data_rhs_peo = { 'intfname':link2.intf2.name, 'ip':'0.0.0.0', 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':'0.0.0.0', 
 		'netbit':32, 'cost':1, 'hello':1, 'area':'0.0.0.0'}}
 
 		if properties.ipRHS:
 			rhs_cer.setIP(ip="%s/%s" %(properties.ipRHS, temp[1]), intf=link2.intf1)
 
   		self.node_to_data[rhs_cer.name].append(data_rhs_cer)
-		self.node_to_data[rhs_aos.name].append(data_rhs_aos)	
+		self.node_to_data[rhs_peo.name].append(data_rhs_peo)	
 
-		self.addLineToCFG(lhs_aos.dpid, link1.intf2.name, rhs_aos.dpid, link2.intf2.name)
+		self.addLineToVLLCFG(lhs_peo.dpid, link1.intf2.name, rhs_peo.dpid, link2.intf2.name)
 
 		return (link1, link2)
 
-	def addLineToCFG(self, lhs_dpid, lhs_intf, rhs_dpid, rhs_intf):
+	def addLineToVLLCFG(self, lhs_dpid, lhs_intf, rhs_dpid, rhs_intf):
 		lhs_dpid = ':'.join(s.encode('hex') for s in lhs_dpid.decode('hex'))
 		rhs_dpid = ':'.join(s.encode('hex') for s in rhs_dpid.decode('hex'))
-		self.vllcfg.write(("%s|%s|%s|%s|0|0|\n" %(lhs_dpid, rhs_dpid, lhs_intf, rhs_intf)))
+		self.vlls.append({'lhs_dpid':lhs_dpid, 'rhs_dpid':rhs_dpid, 'lhs_intf':lhs_intf, 'rhs_intf':rhs_intf, 'lhs_label':'0', 'rhs_label':'0'})
+
+	def addPW(self, lhs_cer, rhs_cer, properties):
+		info("*** Connect %s to %s through Pw\n" %(lhs_cer.name, rhs_cer.name))		
+
+		lhs_peo = self.node_to_node[lhs_cer.name]
+		rhs_peo = self.node_to_node[rhs_cer.name]
+
+		lhs_peo = self.getNodeByName(lhs_peo)
+		rhs_peo = self.getNodeByName(rhs_peo)
+		
+		lhs_vsf = self.getVSFByCERandPEO(lhs_cer.name, lhs_peo.name)
+		rhs_vsf = self.getVSFByCERandPEO(rhs_cer.name, rhs_peo.name)
+
+		if type(lhs_cer) is not IPHost or type(rhs_cer) is not IPHost or type(lhs_peo) is not OSHI or type(rhs_peo) is not OSHI:
+			error("ERROR cannot provide PW among %s and %s through %s and %s\n" %(lhs_cer.name, rhs_cer.name, lhs_peo.name, rhs_peo.name))
+			sys.exit(-2)
+
+		self.checkLLfeasibility(lhs_cer, rhs_cer)
+
+		vtepallocator = self.customer_to_vtepallocator[self.cer_to_customer[lhs_cer.name]]
+
+		temp = properties.net.split("/")
+
+		link1 = Mininet.addLink(self, lhs_cer, lhs_peo)
+		data_lhs_cer = { 'intfname':link1.intf1.name, 'ip':properties.ipLHS, 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':temp[0], 
+		'netbit':temp[1], 'cost':1, 'hello':1, 'area':'0.0.0.0'}}
+		if properties.ipLHS: 
+			lhs_cer.setIP(ip="%s/%s" %(properties.ipLHS, temp[1]), intf=link1.intf1)
+		self.node_to_data[lhs_cer.name].append(data_lhs_cer)
+
+		vsflink1 = Mininet.addLink(self, lhs_peo, lhs_vsf)
+		vsflink2 = Mininet.addLink(self, lhs_peo, lhs_vsf)
+		data_lhs_peo = { 'eth':link1.intf2.name, 'v_eth1':vsflink1.intf1.name, 'v_eth2':vsflink2.intf1.name}
+		self.node_to_pw_data[lhs_peo.name].append(data_lhs_peo)
+		lhs_vtep = vtepallocator.next_vtep()
+		rhs_vtep = vtepallocator.next_vtep()
+		data_lhs_vsf = { 'eth': vsflink1.intf2.name, 'remoteip': rhs_vtep.IP, 'remotemac': rhs_vtep.MAC, 'v_eth':vsflink2.intf2.name}
+		if lhs_vtep:
+			vsflink2.intf2.setIP(lhs_vtep.IP)
+			vsflink2.intf2.setMAC(lhs_vtep.MAC)
+		#if rhs_vtep:
+			#temp = rhs_vtep.IP.split("/")
+			#IP = temp[0]
+			#lhs_vsf.setARP(IP, rhs_vtep.MAC)
+		self.node_to_pw_data[lhs_vsf.name].append(data_lhs_vsf)
+
+		link2 = Mininet.addLink(self, rhs_cer, rhs_peo)
+		data_rhs_cer = { 'intfname':link2.intf1.name, 'ip':properties.ipRHS, 'ingrtype':None, 'ingrdata':None, 'net':{ 'net':temp[0], 
+		'netbit':temp[1], 'cost':1, 'hello':1, 'area':'0.0.0.0'}}
+		if properties.ipRHS:
+			rhs_cer.setIP(ip="%s/%s" %(properties.ipRHS, temp[1]), intf=link2.intf1)
+  		self.node_to_data[rhs_cer.name].append(data_rhs_cer)
+
+		vsflink3 = Mininet.addLink(self, rhs_peo, rhs_vsf)
+		vsflink4 = Mininet.addLink(self, rhs_peo, rhs_vsf)
+		data_rhs_peo = { 'eth': link2.intf2.name, 'v_eth1':vsflink3.intf1.name, 'v_eth2':vsflink4.intf1.name}
+		self.node_to_pw_data[rhs_peo.name].append(data_rhs_peo)
+		data_rhs_vsf = {'eth': vsflink3.intf2.name, 'remoteip': lhs_vtep.IP, 'remotemac': lhs_vtep.MAC, 'v_eth':vsflink4.intf2.name}
+		if rhs_vtep:
+			vsflink4.intf2.setIP(rhs_vtep.IP)
+			vsflink4.intf2.setMAC(rhs_vtep.MAC)
+		#if lhs_vtep:
+			#temp = lhs_vtep.IP.split("/")
+			#IP = temp[0]
+			#rhs_vsf.setARP(IP, lhs_vtep.MAC)
+		self.node_to_pw_data[rhs_vsf.name].append(data_rhs_vsf)
+	
+		self.addLineToPWCFG(lhs_peo.dpid, vsflink2.intf1.name, lhs_vtep, rhs_peo.dpid, vsflink4.intf1.name, rhs_vtep)
+
+		return (link1, vsflink1, vsflink2, link2, vsflink3, vsflink4)
+
+	def getVSFByCERandPEO(self, cer, peo):
+		key = "%s-%s" %(cer,peo)
+		vsf = self.pe_cer_to_vsf.get(key, None)
+		if not vsf:
+			name = self.newVsfName()
+			vsf = Mininet.addHost(self, name, cls=VSF)
+			self.vsfs.append(vsf)
+			self.pe_cer_to_vsf[key]=vsf
+		return vsf
+
+	def addLineToPWCFG(self, lhs_dpid, lhs_intf, lhs_vtep, rhs_dpid, rhs_intf, rhs_vtep):
+		lhs_dpid = ':'.join(s.encode('hex') for s in lhs_dpid.decode('hex'))
+		rhs_dpid = ':'.join(s.encode('hex') for s in rhs_dpid.decode('hex'))
+		lhs_mac = ':'.join(s.encode('hex') for s in lhs_vtep.MAC.decode('hex'))
+		rhs_mac = ':'.join(s.encode('hex') for s in rhs_vtep.MAC.decode('hex'))
+		self.pws.append({'lhs_dpid':lhs_dpid, 'rhs_dpid':rhs_dpid, 'lhs_intf':lhs_intf, 'rhs_intf':rhs_intf, 'lhs_label':'0', 'rhs_label':'0',
+		'lhs_mac': lhs_mac, 'rhs_mac': rhs_mac})
 
 	def configHosts( self ):
 		"Configure a set of hosts."
@@ -239,6 +347,8 @@ class MininetOSHI(Mininet):
 		info("*** Kill old processes\n")
 		root.cmd('killall zebra')
 		root.cmd('killall ospfd')
+		root.cmd('killall sshd')
+		root.cmd('killall apache2')
 	
 		cfile = '/etc/environment'
 	  	line1 = 'VTYSH_PAGER=more\n'
@@ -262,10 +372,19 @@ class MininetOSHI(Mininet):
 		info( '*** Starting %s cr oshis\n' % len(self.cr_oshis) )
 		for cr_oshi in self.cr_oshis:
 			cr_oshi.start(self.ctrls, self.node_to_data[cr_oshi.name],  self.coex)
+
+		coexFactory = CoexFactory()
+		coex = coexFactory.getCoex(self.coex['coex_type'], self.coex['coex_data'], [], [], "", OSHI.OF_V)		
+		
 		info( '\n' )
 		info( '*** Starting %s pe oshis\n' % len(self.pe_oshis) )
 		for pe_oshi in self.pe_oshis:
 			pe_oshi.start(self.ctrls, self.node_to_data[pe_oshi.name],  self.coex)
+			pe_oshi.start_pw(coex.tableIP, self.node_to_pw_data[pe_oshi.name])
+		info( '\n' )
+		info( '*** Starting %s vsfs\n' % len(self.vsfs) )
+		for vsf in self.vsfs:
+			vsf.start(self.node_to_pw_data[vsf.name])		
 		info( '\n' )
 		info( '*** Starting %s in band controllers\n' % len(self.ctrls) )
 		for controller in self.ctrls:
@@ -275,8 +394,24 @@ class MininetOSHI(Mininet):
 		for ce_router in self.ce_routers:
 			ce_router.start(self.node_to_default_via[ce_router.name])
 		info( '\n' )
+		info( '*** Starting %s management servers\n' % len(self.mgms) )
+		for mgm in self.mgms:
+			mgm.start(self.node_to_default_via[mgm.name])
+		info( '\n' )
 
-		self.vllcfg.close()
+
+		vllcfg_file = open('vll_pusher.cfg','w')
+
+		
+		vllcfg = {}
+		vllcfg['tableSBP'] = coex.tableSBP
+		vllcfg['tableIP'] = coex.tableIP
+		vllcfg['vlls'] = self.vlls
+		vllcfg['pws'] = self.pws
+
+		vllcfg_file.write(json.dumps(vllcfg, sort_keys=True, indent=4))
+
+		vllcfg_file.close()
 
 	def cleanEnvironment(self):
 		
@@ -293,10 +428,18 @@ class MininetOSHI(Mininet):
 		root.cmd('killall ovs-vswitchd')
 		root.cmd('killall zebra')
 		root.cmd('killall ospfd')
+		root.cmd('killall sshd')
+		root.cmd('killall apache2')
 
-		info("*** Restart Avahi and Open vSwitch\n")	
-		root.cmd('start avahi-daemon') 
-		root.cmd('/etc/init.d/openvswitch-switch start') 
+		info("*** Restart Avahi, Open vSwitch and sshd\n")	
+		root.cmd('/etc/init.d/avahi-daemon start')
+
+		if OSHI.OF_V == None: 
+			root.cmd('/etc/init.d/openvswitch-switch start') 
+		elif OSHI.OF_V == "OpenFlow13":
+			root.cmd('/etc/init.d/openvswitchd start')
+
+		root.cmd('/etc/init.d/ssh start')
 
 		info('*** Unmounting host bind mounts\n')
 		unmountAll()
@@ -317,11 +460,19 @@ class MininetOSHI(Mininet):
 
 		info( '*** Done\n' )
 
-	def checkVllfeasibility(self, lhs, rhs):
+	def checkLLfeasibility(self, lhs, rhs):
 		if lhs not in self.ce_routers or rhs not in self.ce_routers:
-			error("Error misconfiguration Virtual Leased Line\n")
+			error("Error misconfiguration Leased Line\n")
 			error("Error cannot connect %s to %s\n" % (lhs, rhs))
-			sys.exit(2)	
+			sys.exit(2)
+
+		# XXX In futuro puo' combiare
+		cid_lhs = self.cer_to_customer[lhs.name]
+		cid_rhs = self.cer_to_customer[rhs.name]
+		if cid_lhs != cid_rhs:
+			error("Error misconfiguration Virtual Leased Line\n")
+			error("Error cannot connect %s to %s - Different Customer\n" % (lhs, rhs))
+			sys.exit(2)
 
 	# Utility functions to generate
 	# automatically new names
@@ -344,6 +495,16 @@ class MininetOSHI(Mininet):
 	def newCeName(self):
 		index = str(len(self.ce_routers) + 1)
 		name = "cer%s" % index
+		return name
+
+	def newVsfName(self):
+		index = str(len(self.vsfs) + 1)
+		name = "vsf%s" % index
+		return name
+
+	def newMgmtName(self):
+		index = str(len(self.mgms) + 1)
+		name = "mgm%s" % index
 		return name
 
 

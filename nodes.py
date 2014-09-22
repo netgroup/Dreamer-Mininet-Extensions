@@ -188,17 +188,19 @@ class OSHI(PrivateHost):
 	zebra_exec = '/usr/lib/quagga/zebra'
 	ospfd_exec = '/usr/lib/quagga/ospfd'
 
+	ovs_initd = "/etc/init.d/openvswitchd"
+
 	checked = False
 
 
 	baseDIR = "/tmp"
 	dpidLen = 16
 
-	OF_V = None #"OpenFlow13"
+	OF_V = "OpenFlow13"
 	
 	
 	def __init__(self, name, loopback, *args, **kwargs ):
-		dirs = ['/var/log/', '/var/log/quagga', '/var/run', '/var/run/quagga', '/var/run/openvswitch']
+		dirs = ['/var/log/', '/var/log/quagga', '/var/run', '/var/run/quagga', '/var/run/openvswitch', '/var/run/sshd']
 		PrivateHost.__init__(self, name, privateDirs=dirs, *args, **kwargs )
 		self.loopback = loopback
 		self.dpid = self.loopbackDpid(self.loopback, "00000000")
@@ -206,6 +208,8 @@ class OSHI(PrivateHost):
 		self.path_quagga =  "%s/%s/quagga" %(self.baseDIR, self.name)
 		if OSHI.checked == False:
 			self.checkQuagga()
+			if self.OF_V == "OpenFlow13":
+				self.checkOVS()
 			OSHI.checked = True
 	
 	
@@ -244,6 +248,65 @@ class OSHI(PrivateHost):
 				   'Otherwise change ospfdPath variable according to your configuration\n' )
 			exit( 1 )
 
+	def checkOVS(self):
+		root = Node('root', inNamespace=False)
+		modinfo = root.cmd("modinfo openvswitch | grep version: |awk -F':' '{print $2}' | awk '{ gsub (\" \", \"\", $0); print}'")
+		versions = modinfo.split("\n")
+		version = versions[0]
+		modversion = float(version[:3])
+		if modversion < 2.3:
+			error( 'OVS Kernel Module does not respect version requirement\nPlease check your OVS installation\n' )
+			exit( 1 )
+
+		vswitchdinfo = root.cmd("ovs-vswitchd --version | grep ovs-vswitchd |awk -F')' '{print $2}' | awk '{ gsub (\" \", \"\", $0); print}'")
+		versions = vswitchdinfo.split("\n")
+		version = versions[0]
+		vswitchdversion = float(version[:3])
+		if vswitchdversion < 2.3:
+			error( 'OVS vswitchd does not respect version requirement\nPlease check your OVS installation\n' )
+			exit( 1 )
+
+		if modversion != vswitchdversion:
+			error( 'OVS Kernel module version and OVS vswitchd version are different\nPlease check your OVS installation\n' )
+			exit( 1)
+
+		openvswitchd = root.cmd('ls %s 2> /dev/null | wc -l' % self.ovs_initd)
+		if '1' not in openvswitchd:
+			error( 'Cannot find required executable /etc/init.d/openvswitchd\nPlease make sure that OVS is properly installed\n')
+			exit( 1 )
+
+	def start_pw( self, table, pws_data = []):
+		
+		if self.OF_V != "OpenFlow13":
+			error("ERROR PW configuration is not possibile for %s - OpenFlow version != 1.3\n" % self.name)
+			sys.exit(-2)	
+	
+		rules = []
+
+		# TODO In futuro incapsularlo
+		for pw_data in pws_data:
+
+			eth = pw_data['eth']
+			v_eth1 = pw_data['v_eth1']
+			v_eth2 = pw_data['v_eth2']
+
+			self.cmd("ifconfig %s 0" % eth)
+			self.cmd("ifconfig %s 0" % v_eth1)
+			self.cmd("ifconfig %s 0" % v_eth2)
+			self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait add-port %s %s" %(self.path_ovs, self.name, eth))
+			self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait add-port %s %s" %(self.path_ovs, self.name, v_eth1))
+			self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait add-port %s %s" %(self.path_ovs, self.name, v_eth2))
+
+			rules.append('ovs-ofctl -O %s add-flow %s "table=%s,hard_timeout=0,priority=%s,in_port=%s,action=output:%s"' %(self.OF_V, self.name,
+			table, 32768, eth, v_eth1))
+			rules.append('ovs-ofctl -O %s add-flow %s "table=%s,hard_timeout=0,priority=%s,in_port=%s,action=output:%s"' %(self.OF_V, self.name, 
+			table, 32768, v_eth1, eth))
+
+		for rule in rules:
+			rule = self.translate_rule(rule)
+			self.cmd(rule)
+
+
 	def start( self, controllers = [], intfs_to_data = [],  coex={}):
 		info("%s " % self.name)
 
@@ -253,6 +316,9 @@ class OSHI(PrivateHost):
 		if len(intfs_to_data) == 0:
 			error("ERROR configuration is not possibile for %s\n" % self.name)
 			sys.exit(-2)
+
+		# Running SSHD
+		self.cmd('/usr/sbin/sshd -o UseDNS=no -u0')
 
 		if coex == {}:
 			error("ERROR coexistence is {}\n")
@@ -502,7 +568,123 @@ class OSHI(PrivateHost):
 			sys.exit(-2)
 		data = intf.split('-')
 		return int(data[1][3:])
+
+class VSF(PrivateHost):
+
+	ovs_initd = "/etc/init.d/openvswitchd"
+	baseDIR = "/tmp"
+	
+	def __init__(self, name, *args, **kwargs ):
+		dirs = ['/var/log/', '/var/run', '/var/run/openvswitch']
+		PrivateHost.__init__(self, name, privateDirs=dirs, *args, **kwargs )
+		self.path_ovs = "%s/%s/ovs" %(self.baseDIR, self.name)
+	
 		
+	def start( self, pws_data=[]):
+		info("%s " % self.name)
+
+		if len(pws_data) == 0:
+			error("ERROR PW configuration is not possibile for %s\n" % self.name)
+			sys.exit(-2)
+
+		self.initial_configuration()
+		self.configure_ovs(pws_data)
+
+	def initial_configuration(self):
+		
+		shutil.rmtree("%s/%s" %(self.baseDIR, self.name), ignore_errors=True)
+		os.mkdir("%s/%s" %(self.baseDIR, self.name))
+
+		os.mkdir(self.path_ovs)
+		self.cmd("ovsdb-tool create %s/conf.db" % self.path_ovs)
+		self.cmd("ovsdb-server %s/conf.db --remote=punix:%s/db.sock --remote=db:Open_vSwitch,Open_vSwitch,manager_options --no-chdir --unixctl=%s/ovsdb-server.sock --detach" %(self.path_ovs, self.path_ovs, self.path_ovs))
+		self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait init" % self.path_ovs)
+		self.cmd("ovs-vswitchd unix:%s/db.sock -vinfo --log-file=%s/ovs-vswitchd.log --no-chdir --detach" %(self.path_ovs, self.path_ovs))
+		self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait add-br %s" %(self.path_ovs, self.name))
+	
+	def configure_ovs(self, pws_data):
+
+		rules = []
+		
+		for pw in pws_data:
+		
+			eth = pw['eth']
+			remoteip = pw['remoteip']
+			v_eth = pw['v_eth']	
+			temp = 	remoteip.split('/')
+			remoteip = temp[0]
+			remotemac = pw['remotemac']
+			gre = "gre%s" %(self.strip_number(eth))
+			
+			self.cmd("ifconfig %s 0" % eth)
+			self.cmd( 'arp', '-s', remoteip, remotemac, '-i', v_eth)
+			self.cmd( 'ip', 'r', 'a', remoteip, 'dev', v_eth)
+			self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait add-port %s %s" %(self.path_ovs, self.name, eth))
+			self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait add-port %s %s -- set Interface %s type=gre options:remote_ip=%s" %(self.path_ovs, 
+			self.name, gre, gre, remoteip))
+			
+			rules.append('ovs-ofctl add-flow %s "table=0,hard_timeout=0,priority=%s,in_port=%s,action=output:%s"'%(self.name, 32768, eth, 
+			gre))
+			rules.append('ovs-ofctl add-flow %s "table=0,hard_timeout=0,priority=%s,in_port=%s,action=output:%s"'%(self.name, 32768, gre, 
+			eth))			
+
+		for rule in rules:
+			rule = self.translate_rule(rule)
+			self.cmd(rule)
+
+	def get_if_index(self, in_if_name):
+		output = self.cmd('ovs-vsctl --db=unix:%s/db.sock --no-wait find Interface name=%s' %(self.path_ovs, in_if_name))
+		if output != None and output != "" :
+			return re.search( r'ofport(.*): (\d*)', output).group(2)
+		else:
+			error("ERROR port not available\n")
+			sys.exit(-2)
+
+	def translate_rule(self, rule):
+		# ports reg exp
+		out_port = re.compile('output:(.*?),')
+		in_port = re.compile('in_port=(.*?),')
+		out_port_end = ","
+	
+		#test if rule has in_port
+		if 'in_port' in rule and not re.search(in_port, rule):
+			error("ERROR wrong format for in_port\n")
+			sys.exit(-2)	
+		elif 'in_port' in rule and re.search(in_port, rule):
+			in_if_name = in_port.search(rule).group(1)
+			in_if_index = self.get_if_index(in_if_name)
+			rule = re.sub(in_port, "in_port="+in_if_index+",", rule)
+
+		#test if rule has output_port
+		if 'output' in rule and not re.search(out_port, rule):
+			#print "output: not followed by comma, retry.."
+			out_port = re.compile('output:(.*?)\"(\Z)')
+			out_port_end = "\""
+			if not re.search(out_port, rule):
+				error("ERROR wrong format for out_put port\n")
+				sys.exit(-2)
+			out_if_name = out_port.search(rule).group(1)
+			out_if_index = self.get_if_index(out_if_name)	
+			rule = re.sub(out_port, "output:"+out_if_index+out_port_end, rule)
+		elif 'output' in rule and re.search(out_port, rule):	
+			out_if_name = out_port.search(rule).group(1)
+			out_if_index = self.get_if_index(out_if_name)
+			rule = re.sub(out_port, "output:"+out_if_index+out_port_end, rule)
+
+		return rule
+
+	def terminate( self ):
+		Host.terminate(self)
+		shutil.rmtree("%s/%s" %(self.baseDIR, self.name), ignore_errors=True)
+
+	def strip_number(self, intf):
+		intf = str(intf)
+		intf_pattern = re.search(r'%s-eth\d+$' %(self.name), intf)
+		if intf_pattern is None:
+			error("ERROR bad name for intf\n")
+			sys.exit(-2)
+		data = intf.split('-')
+		return int(data[1][3:])
 
 # Class that inherits from PrivateHost and extends it with 
 # Router functionalities

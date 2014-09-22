@@ -37,7 +37,7 @@ from ingress_classifications import *
 
 from mininet.cli import CLI
 
-parser_path = "" #"../Dreamer-Topology-Parser-and-Validator/"
+parser_path = "../Dreamer-Topology-Parser-and-Validator/"
 if parser_path == "":
 	print "Error Set Environment Variable At The Beginning Of File"
 	sys.exit(-2)
@@ -107,7 +107,7 @@ def topo(topology):
 		print "*** Build CONTROLLER"
 	ctrl = net.addController(name="ctr1", tcp_port=6633)
 	croshi = net.getNodeByName(croshi)	
-	net.addCoexistenceMechanism("COEXA", 1)
+	net.addCoexistenceMechanism("COEXH", 0)
 	linkproperties = generator.getLinksProperties([(croshi.name, ctrl.name)])
 	linkproperties[0].ingr.type = "INGRB"
 	linkproperties[0].ingr.data = None
