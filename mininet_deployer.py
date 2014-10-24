@@ -37,7 +37,7 @@ from ingress_classifications import *
 
 from mininet.cli import CLI
 
-parser_path = "../../Dreamer-Topology-Parser-and-Validator/"
+parser_path = ""
 if parser_path == "":
 	print "Error Set Environment Variable At The Beginning Of File"
 	sys.exit(-2)
