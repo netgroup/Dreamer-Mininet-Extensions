@@ -1,0 +1,299 @@
+{
+	"vertices": {
+		"cro1": {
+			"pos": {
+				"x": 606.0021276595746,
+				"y": 144.82758620689657
+			},
+			"v": {
+				"x": 0,
+				"y": 0
+			},
+			"vertex_info": {
+				"frozen": false,
+				"node-type": "OSHI-CR",
+				"property": {
+					"domain-oshi": {
+						"cluster_id": ""
+					},
+					"loopback": "",
+					"vm": {
+						"interfaces": "",
+						"mgt_ip": ""
+					}
+				}
+			}
+		},
+		"cro2": {
+			"pos": {
+				"x": 416.8860182370821,
+				"y": 241.3793103448276
+			},
+			"v": {
+				"x": 0,
+				"y": 0
+			},
+			"vertex_info": {
+				"frozen": false,
+				"node-type": "OSHI-CR",
+				"property": {
+					"domain-oshi": {
+						"cluster_id": ""
+					},
+					"loopback": "",
+					"vm": {
+						"interfaces": "",
+						"mgt_ip": ""
+					}
+				}
+			}
+		},
+		"peo3": {
+			"pos": {
+				"x": 659.1979371316309,
+				"y": 310
+			},
+			"v": {
+				"x": 0,
+				"y": 0
+			},
+			"vertex_info": {
+				"frozen": false,
+				"node-type": "OSHI-PE",
+				"property": {
+					"domain-oshi": {
+						"cluster_id": ""
+					},
+					"loopback": "",
+					"vm": {
+						"interfaces": "",
+						"mgt_ip": ""
+					}
+				}
+			}
+		},
+		"cro4": {
+			"pos": {
+				"x": 235.4367781155015,
+				"y": 360
+			},
+			"v": {
+				"x": 0,
+				"y": 0
+			},
+			"vertex_info": {
+				"frozen": false,
+				"node-type": "OSHI-CR",
+				"property": {
+					"domain-oshi": {
+						"cluster_id": ""
+					},
+					"loopback": "",
+					"vm": {
+						"interfaces": "",
+						"mgt_ip": ""
+					}
+				}
+			}
+		},
+		"peo5": {
+			"pos": {
+				"x": 214.9917933130699,
+				"y": 166.89655172413794
+			},
+			"v": {
+				"x": 0,
+				"y": 0
+			},
+			"vertex_info": {
+				"frozen": false,
+				"node-type": "OSHI-PE",
+				"property": {
+					"domain-oshi": {
+						"cluster_id": ""
+					},
+					"loopback": "",
+					"vm": {
+						"interfaces": "",
+						"mgt_ip": ""
+					}
+				}
+			}
+		},
+		"cer6": {
+			"pos": {
+				"x": 105.1,
+				"y": 40
+			},
+			"v": {
+				"x": 0,
+				"y": 0
+			},
+			"vertex_info": {
+				"frozen": false,
+				"node-type": "CE",
+				"property": {
+					"domain-oshi": {
+						"cluster_id": ""
+					},
+					"vm": {
+						"interfaces": "",
+						"mgt_ip": ""
+					}
+				}
+			}
+		},
+		"cer7": {
+			"pos": {
+				"x": 945.9,
+				"y": 304.8275862068966
+			},
+			"v": {
+				"x": 0,
+				"y": 0
+			},
+			"vertex_info": {
+				"frozen": false,
+				"node-type": "CE",
+				"property": {
+					"domain-oshi": {
+						"cluster_id": ""
+					},
+					"vm": {
+						"interfaces": "",
+						"mgt_ip": ""
+					}
+				}
+			}
+		},
+		"ctr8": {
+			"pos": {
+				"x": 374,
+				"y": 79
+			},
+			"v": {
+				"x": 0,
+				"y": 0
+			},
+			"vertex_info": {
+				"frozen": false,
+				"node-type": "OF Controller",
+				"property": {
+					"domain-oshi": {
+						"cluster_id": ""
+					},
+					"tcp_port": "6633",
+					"vm": {
+						"interfaces": "",
+						"mgt_ip": ""
+					}
+				}
+			}
+		}
+	},
+	"edges": {
+		"cer6&&peo5": {
+			"links": [
+				{
+					"link_label": "ciao",
+					"link-type": "Data"
+				}
+			]
+		},
+		"cer7&&peo3": {
+			"links": [
+				{
+					"link_label": "ciao",
+					"link-type": "Data"
+				}
+			]
+		},
+		"peo3&&cro1": {
+			"links": [
+				{
+					"link_label": "ciao",
+					"link-type": "Data"
+				}
+			]
+		},
+		"peo3&&cro2": {
+			"links": [
+				{
+					"link_label": "ciao",
+					"link-type": "Data"
+				}
+			]
+		},
+		"peo3&&cro4": {
+			"links": [
+				{
+					"link_label": "ciao",
+					"link-type": "Data"
+				}
+			]
+		},
+		"cro4&&cro2": {
+			"links": [
+				{
+					"link_label": "ciao",
+					"link-type": "Data"
+				}
+			]
+		},
+		"cro1&&cro2": {
+			"links": [
+				{
+					"link_label": "ciao",
+					"link-type": "Data"
+				}
+			]
+		},
+		"cro1&&peo5": {
+			"links": [
+				{
+					"link_label": "ciao",
+					"link-type": "Data"
+				}
+			]
+		},
+		"cro4&&peo5": {
+			"links": [
+				{
+					"link_label": "ciao",
+					"link-type": "Data"
+				}
+			]
+		},
+		"cro2&&peo5": {
+			"links": [
+				{
+					"link_label": "ciao",
+					"link-type": "Data"
+				}
+			]
+		},
+		"cer6&&cer7": {
+			"links": [
+				{
+					"link_label": "ciao",
+					"link-type": "Vll"
+				}
+			]
+		},
+		"ctr8&&cro2": {
+			"links": [
+				{
+					"link_label": "ciao",
+					"link-type": "Data"
+				}
+			]
+		}
+	},
+	"graph_parameters": {
+		"tunneling": "VXLAN",
+		"vlan": 0,
+		"mapped": false,
+		"generated": false,
+		"testbed": "MININET"
+	}
+}

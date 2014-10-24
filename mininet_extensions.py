@@ -58,7 +58,6 @@ class MininetOSHI(Mininet):
 		self.pe_oshis = []
 		self.ce_routers = []
 		self.ctrls = []
-		self.mgms = []
 		self.nodes_in_rn = []
 		self.node_to_data = defaultdict(list)
 		self.node_to_node = {}
@@ -92,8 +91,8 @@ class MininetOSHI(Mininet):
 		return self.id_to_node[id_]
 	
 	# Create and Add a new OSHI
-	def addOSHI(self, params, name=None):
-		loopback = params.loopback
+	def addOSHI(self, nodeproperties, name=None):
+		loopback = nodeproperties['loopback']
 		if not loopback:
 			error("ERROR loopback not provided\n")
 			sys.exit(-2)
@@ -103,34 +102,35 @@ class MininetOSHI(Mininet):
 	
 	# Create and Add a new OSHI insert
 	# it in the Core OSHI set
-	def addCrOSHI(self, params, name=None):
+	def addCrOSHI(self, nodeproperties, name=None):
 		if not name:
 			name = self.newCrName()
-		oshi = self.addOSHI(params, name)
+		oshi = self.addOSHI(nodeproperties, name)
 		self.cr_oshis.append(oshi)
 		return oshi
 		
 	# Create and Add a new OSHI insert it
 	# in the Provider Edge OSHI set
-	def addPeOSHI(self, params, name=None):
+	def addPeOSHI(self, nodeproperties, name=None):
 		if not name:
 			name = self.newPeName()
-		oshi = self.addOSHI(params, name)
+		oshi = self.addOSHI(nodeproperties, name)
 		self.pe_oshis.append(oshi)
 		return oshi
 
 	
 	# Create and Add a new Remote Controller
-	def addController(self, name=None, ip="127.0.0.1" ,tcp_port=6633):
+	def addController(self, nodeproperties, name=None, ip="127.0.0.1" ,tcp_port=6633):
 		if not name:
 			name = self.newCtrlName()
+		tcp_port = int(nodeproperties['tcp_port'])
 		ctrl = Mininet.addHost(self, name, cls=InBandController, tcp_port=tcp_port)
 		self.ctrls.append(ctrl)
 		return ctrl
 
 	# Create and Add a new Customer Edge Router.
 	# In our case it is a simple host
-	def addCeRouter(self, cid, name=None):
+	def addCeRouter(self, cid, nodeproperties, name=None):
 		if not name:
 			name = self.newCeName()
 			
@@ -147,15 +147,6 @@ class MininetOSHI(Mininet):
 		self.id_to_node[ce_router.id]=ce_router
 
 		return ce_router
-
-	# Create and Add a new Remote Management
-	def addManagement(self, name=None):
-		if not name:
-			name = self.newMgmtName()
-		mgmt = Mininet.addHost(self, name, cls=IPHost, inNamespace=True)
-		self.mgms.append(mgmt)
-		self.nodes_in_rn.append(mgmt)
-		return mgmt
 
 	def addCoexistenceMechanism(self, coex_type, coex_data):
 
@@ -506,8 +497,6 @@ class MininetOSHI(Mininet):
 		info("*** Kill old processes\n")
 		root.cmd('killall zebra')
 		root.cmd('killall ospfd')
-		root.cmd('killall sshd')
-		root.cmd('killall apache2')
 	
 		cfile = '/etc/environment'
 	  	line1 = 'VTYSH_PAGER=more\n'
@@ -518,20 +507,12 @@ class MininetOSHI(Mininet):
 		  		f.write( line1 )
 		  	f.close();
 
-
-		path = "/root/.ssh/authorized_keys"
-		if not os.path.exists(path):
-			root.cmd("touch /root/.ssh/authorized_keys")
-	
 		if os.path.exists(self.temp_cfg):
 			os.remove(self.temp_cfg)
-
 		
 		root.cmd('service network-manager restart')
 		info("*** Restart Network Manager\n")
 		time.sleep(10)
-
-		self.configureMGMT()
 
 	def start(self):
 
@@ -562,10 +543,6 @@ class MininetOSHI(Mininet):
 		info( '*** Starting %s ce routers\n' % len(self.ce_routers) )
 		for ce_router in self.ce_routers:
 			ce_router.start(self.node_to_default_via[ce_router.name])
-		info( '\n' )
-		info( '*** Starting %s management servers\n' % len(self.mgms) )
-		for mgm in self.mgms:
-			mgm.start(self.node_to_default_via[mgm.name])
 		info( '\n' )
 
 		vscfg_file = open('vs_selector.cfg', 'w')
@@ -705,8 +682,6 @@ class MininetOSHI(Mininet):
 		root.cmd('killall ovs-vswitchd')
 		root.cmd('killall zebra')
 		root.cmd('killall ospfd')
-		root.cmd('killall sshd')
-		root.cmd('killall apache2')
 
 		info("*** Restart Avahi, Open vSwitch and sshd\n")	
 		root.cmd('/etc/init.d/avahi-daemon start')
@@ -824,7 +799,3 @@ class MininetOSHI(Mininet):
 		name = "vs%s" % index
 		return name
 
-	def newMgmtName(self):
-		index = str(len(self.mgms) + 1)
-		name = "mgm%s" % index
-		return name
