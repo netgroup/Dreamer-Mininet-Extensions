@@ -561,10 +561,10 @@ class MininetOSHI(Mininet):
 		if 'DISPLAY' not in os.environ:
 			error( "Error starting terms: Cannot connect to display\n" )
 			return
-		info( "*** Running mgm and ctrls terms on %s\n" % os.environ[ 'DISPLAY' ] )
+		info( "*** Running ctrls terms on %s\n" % os.environ[ 'DISPLAY' ] )
 		cleanUpScreens()
 		self.terms += makeTerms( self.ctrls, 'controller' )
-		self.terms += makeTerms( self.mgms, 'management' )
+		self.terms += makeTerms( self.ctrls, 'controller2' )
 
 		if self.is_vs:
 			info("*** Waiting for the creation of the file %s" % self.temp_cfg)
@@ -683,7 +683,7 @@ class MininetOSHI(Mininet):
 		root.cmd('killall zebra')
 		root.cmd('killall ospfd')
 
-		info("*** Restart Avahi, Open vSwitch and sshd\n")	
+		info("*** Restart Avahi, Open vSwitch\n")	
 		root.cmd('/etc/init.d/avahi-daemon start')
 
 		if OSHI.OF_V == None: 
@@ -691,7 +691,7 @@ class MininetOSHI(Mininet):
 		elif OSHI.OF_V == "OpenFlow13":
 			root.cmd('/etc/init.d/openvswitchd start')
 
-		root.cmd('/etc/init.d/ssh start')
+		#root.cmd('/etc/init.d/ssh start')
 
 		info('*** Unmounting host bind mounts\n')
 		unmountAll()
@@ -726,45 +726,6 @@ class MininetOSHI(Mininet):
 			error("Error misconfiguration Virtual Leased Line\n")
 			error("Error cannot connect %s to %s - Different Customer\n" % (lhs, rhs))
 			sys.exit(2)
-
-	def configureMGMT(self):
-
-		root = Node( 'root', inNamespace=False )
-
-		key_priv = "/root/.ssh/id_rsa"
-		key_pub = "/root/.ssh/id_rsa.pub"
-
-		if not os.path.exists(key_priv) or not os.path.exists(key_pub):
-			info( '*** SSH key does not exist - Run ssh_utility.sh\n' )
-			sys.exit(2)
-
-		root.cmd(r'sed -i "s/\(%s * *\).*/\1%s/" /etc/ssh/sshd_config' %("PermitRootLogin", "yes"))
-		
-		authorized_keys = "/root/.ssh/authorized_keys"
-		if os.path.exists(authorized_keys):
-			host = root.cmd("hostname")
-			host = host[:-1]
-			root.cmd("sed -i -e \'/%s@%s/d\' %s" %("root", host, authorized_keys))
-
-		root.cmd("echo $(cat %s) >> %s" %(key_pub, authorized_keys))		
-
-		root.cmd(r'sed -i "s/\(%s *= *\).*/\1%s/" /etc/dsh/dsh.conf' %("remoteshell", "ssh"))
-
-		machines = open('/etc/dsh/machines.list','w')
-		oshi_g = open('/etc/dsh/group/OSHI', 'w')
-		
-		oshis = []
-		for cro in self.cr_oshis:
-			oshis.append(cro)
-		for peo in self.pe_oshis:
-			oshis.append(peo)
-
-		for oshi in oshis:
-			machines.write("%s\n" % oshi.intf().IP())
-			oshi_g.write("%s\n" % oshi.intf().IP())
-		
-		machines.close()
-		oshi_g.close()
 
 	# Utility functions to generate
 	# automatically new names

@@ -340,7 +340,7 @@ class OSHI(PrivateHost):
 			sys.exit(-2)
 
 		# Running SSHD
-		self.cmd('/usr/sbin/sshd -o UseDNS=no -u0')
+		#self.cmd('/usr/sbin/sshd -o UseDNS=no -u0')
 
 
 		

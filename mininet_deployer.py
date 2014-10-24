@@ -37,7 +37,7 @@ from ingress_classifications import *
 
 from mininet.cli import CLI
 
-parser_path = "" #"../Dreamer-Topology-Parser-and-Validator/"
+parser_path = "../Dreamer-Topology-Parser-and-Validator/"
 if parser_path == "":
 	print "Error Set Environment Variable At The Beginning Of File"
 	sys.exit(-2)
@@ -80,7 +80,7 @@ def topo(topology):
 			print "*** Build VLLs Properties"
 		vlls_properties = []
 		for vll in vlls:
-			vlls_properties.append(generator.getVLLsProperties(vll))
+			vlls_properties.append(generator.getVLLProperties(vll))
 			
 
 	set_cr_oshis = parser.cr_oshis
@@ -146,7 +146,7 @@ def topo(topology):
 		print "*** Build CERS"
 	i = 0
 	for cer in set_cers:
-		net.addCeRouter(cid = 0, parser.cers_properties[i],  name = cer)
+		net.addCeRouter(0, parser.cers_properties[i],  name = cer)
 		if verbose:
 			print "*** %s - %s" %(cer, parser.cers_properties[i])
 		i = i + 1

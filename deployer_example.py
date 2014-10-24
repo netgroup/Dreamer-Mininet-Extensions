@@ -39,10 +39,21 @@ if __name__ == '__main__':
 	net = MininetOSHI(verbose)
 	generator = PropertiesGenerator(False)
 	cr_os = ["cro1","cro2","cro3"]
+	cr_properties = []
+	for cr in cr_os:
+		cr_properties.append({ "domain-oshi": {	"cluster_id": "" }, "loopback": ""})
 	pe_os = ["peo1","peo2","peo3"]
+	pe_properties = []
+	for pe in pe_os:
+		pe_properties.append({ "domain-oshi": {	"cluster_id": "" }, "loopback": ""})
 	ctrls = ["ctr1"]
+	ct_properties = []
+	for ctrl in ctrls:
+		ct_properties.append({ "domain-oshi": {	"cluster_id": "" }, "tcp_port": "6633"})
 	ce_os = ["cer1","cer2","cer3","cer4"]
-	mgms = ["mgm1"]
+	ce_properties = []
+	for ce in ce_os:
+		ce_properties.append({})
 
 	net1 = [("cro1","cro2")]
 	net2 = [("cro2","cro3")]
@@ -55,17 +66,19 @@ if __name__ == '__main__':
 	net9 = [("cer3","peo3")]
 	net10 = [("cro1","ctr1")]
 	net11 = [("peo1","cer4")]
-	net12 = [("mgm1","cro2")]
 
 	vss=[["cer1", "cer2", "cer3"], ["cer2", "cer1", "cer4"], ["cer4", "cer1", "cer2", "cer3"]]
 	vlls = [("cer1","cer2"), ("cer2","cer3"), ("cer3","cer1"), ("cer1","cer4")]
 	pws = [("cer1","cer2"), ("cer2","cer3"), ("cer3","cer1"), ("cer1","cer4")]
 	
-	cr_prop = generator.getVerticesProperties(cr_os)
-	pe_prop = generator.getVerticesProperties(pe_os)
-	ct_prop = generator.getVerticesProperties(ctrls)
-	ce_prop = generator.getVerticesProperties(ce_os)
-	mg_prop = generator.getVerticesProperties(mgms)
+	cr_props = generator.getVerticesProperties(cr_os)
+	for cr_prop, cr_property in zip(cr_props, cr_properties):
+		cr_property['loopback']=cr_prop.loopback
+	pe_props = generator.getVerticesProperties(pe_os)
+	for pe_prop, pe_property in zip(pe_props, pe_properties):
+		pe_property['loopback']=pe_prop.loopback
+	#ct_prop = generator.getVerticesProperties(ctrls)
+	#ce_prop = generator.getVerticesProperties(ce_os)
 	
 	net1_properties = generator.getLinksProperties(net1)
 	net2_properties = generator.getLinksProperties(net2)
@@ -78,13 +91,6 @@ if __name__ == '__main__':
 	net9_properties = generator.getLinksProperties(net9)
 	net10_properties = generator.getLinksProperties(net10)
 	net11_properties = generator.getLinksProperties(net11)
-	net12_properties = generator.getLinksProperties(net12)
-	
-	# XXX Ctrl and mgmt special case
-	net10_properties[0].ingr.type = "INGRB"
-	net10_properties[0].ingr.data = None
-	net12_properties[0].ingr.type = "INGRB"
-	net12_properties[0].ingr.data = None
 
 	vlls_properties = []
 	for vll in vlls:
@@ -104,27 +110,22 @@ if __name__ == '__main__':
 	print "*** Create Core OSHI"
 	i = 0
 	for i in range(0, len(cr_os)):
-		cr_oshi = net.addCrOSHI(name = cr_os[i], params = cr_prop[i])
+		cr_oshi = net.addCrOSHI(cr_properties[i], name = cr_os[i])
 		i = i + 1
 	print "*** Create Provider Edge OSHI"
 	i = 0
 	for i in range(0, len(pe_os)):
-		pe_oshi = net.addPeOSHI(name = pe_os[i], params = pe_prop[i])
+		pe_oshi = net.addPeOSHI(pe_properties[i], name = pe_os[i])
 		i = i + 1
 	print "*** Create Controllers"
 	i = 0
 	for i in range(0, len(ctrls)):
-		ctrl = net.addController(name = ctrls[i])
+		ctrl = net.addController(ct_properties[i], name = ctrls[i])
 		i = i + 1
 	print "*** Create Customer Edge Router"
 	i = 0
 	for i in range(0, len(ce_os)):
-		ce_router = net.addCeRouter(cid = 0, name = ce_os[i])
-		i = i + 1
-	print "*** Create Management Server"
-	i = 0
-	for i in range(0, len(mgms)):
-		mgmt = net.addManagement(name = mgms[i])
+		ce_router = net.addCeRouter(0, ce_properties[i], name = ce_os[i])
 		i = i + 1
 
 	i = 0
@@ -202,13 +203,6 @@ if __name__ == '__main__':
 		lhs = net.getNodeByName(link[0])
 		rhs = net.getNodeByName(link[1])
 		net.addLink(lhs, rhs, net11_properties[i])
-		i = i + 1
-
-	i = 0
-	for link in net12:
-		lhs = net.getNodeByName(link[0])
-		rhs = net.getNodeByName(link[1])
-		net.addLink(lhs, rhs, net12_properties[i])
 		i = i + 1
 
 	net.addCoexistenceMechanism("COEXH", 0)
