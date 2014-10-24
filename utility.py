@@ -126,7 +126,7 @@ class PropertiesGenerator(object):
 				ipLHS = hosts.pop(0).__str__()
 			if i is None:
 				ipRHS = hosts.pop(0).__str__()
-			if (b is not None or g is not None) and (e is not None or l is not None):
+			if ((b is not None or g is not None) and (e is not None or l is not None)) or ((a is not None or f is not None) and (c is not None or h is not None)):
 				ingrType = "INGRB"
 				ingrData = None
 			if ipLHS is not None or ipRHS is not None:

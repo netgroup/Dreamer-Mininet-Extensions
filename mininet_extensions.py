@@ -71,8 +71,8 @@ class MininetOSHI(Mininet):
 		
 	
 	# Create and Add a new OSHI
-	def addOSHI(self, params, name=None):
-		loopback = params.loopback
+	def addOSHI(self, nodeproperties, name=None):
+		loopback = nodeproperties['loopback']
 		if not loopback:
 			error("ERROR loopback not provided\n")
 			sys.exit(-2)
@@ -82,20 +82,20 @@ class MininetOSHI(Mininet):
 	
 	# Create and Add a new OSHI insert
 	# it in the Core OSHI set
-	def addCrOSHI(self, params, name=None):
+	def addCrOSHI(self, nodeproperties, name=None):
 		if not name:
 			name = self.newCrName()
-		oshi = self.addOSHI(params, name)
+		oshi = self.addOSHI(nodeproperties, name)
 		self.cr_oshis.append(oshi)
 		return oshi
 	
 	
 	# Create and Add a new OSHI insert it
 	# in the Provider Edge OSHI set
-	def addPeOSHI(self, params, name=None):
+	def addPeOSHI(self, nodeproperties, name=None):
 		if not name:
 			name = self.newPeName()
-		oshi = self.addOSHI(params, name)
+		oshi = self.addOSHI(nodeproperties, name)
 		self.pe_oshis.append(oshi)
 		return oshi
 
@@ -103,9 +103,10 @@ class MininetOSHI(Mininet):
 	# Create and Add a new Remote Controller
 	# if it is in the rootnamespace, save it in
 	# nodes_in_rn array
-	def addController(self, name=None, ip="127.0.0.1" ,tcp_port=6633):
+	def addController(self, nodeproperties, name=None, ip="127.0.0.1"):
 		if not name:
 			name = self.newCtrlName()
+		tcp_port = int(nodeproperties['tcp_port'])
 		ctrl = Mininet.addHost(self, name, cls=InBandController, tcp_port=tcp_port)
 		self.ctrls.append(ctrl)
 		return ctrl
@@ -114,7 +115,7 @@ class MininetOSHI(Mininet):
 	
 	# Create and Add a new Customer Edge Router.
 	# In our case it is a simple host
-	def addCeRouter(self, name=None):
+	def addCeRouter(self, nodeproperties, name=None):
 		if not name:
 			name = self.newCeName()
 		ce_router = Mininet.addHost(self, name, cls=IPHost)
