@@ -83,8 +83,8 @@ class VTEPAllocator(object):
 
 	def __init__(self):	
 		print "*** Calculating Available VTEP Addresses"
-		self.loopbacknet = (IPv4Network(self.vtepnet))
-		self.hosts = list(self.loopbacknet.hosts())
+		self.vtepnet = (IPv4Network(self.vtepnet))
+		self.hosts = list(self.vtepnet.hosts())
 	
 	def next_hostAddress(self):
 		host = self.hosts.pop(0)
@@ -181,7 +181,7 @@ class PropertiesGenerator(object):
 			output.append(linkproperties)
 		return output
 
-	def getVLLsProperties(self, vll):
+	def getVLLProperties(self, vll):
 		net = self.netAllocator.next_netAddress()
 		if self.verbose == True:		
 			print net
@@ -232,6 +232,31 @@ class PropertiesGenerator(object):
 			output.append(vertexproperties)
 		return output
 
+	def getVSProperties(self, endnodes):
+		net = self.netAllocator.next_netAddress()
+		if self.verbose == True:		
+			print net
+		hosts = list(net.hosts())				
+		if self.verbose == True:
+			print hosts		
+			print "endnodes: %s" % ' '.join(endnode.name for endnode in endnodes)
+
+		ips = []
+
+		for endnode in endnodes:		
+			e = re.search(r'cer\d+$', endnode)
+			
+			if e is None:
+				print "All sides must be Customer Edge Router %s" % endnode
+				sys.exit(-2)
+		
+			ips.append("%s" %(hosts.pop(0).__str__()))
+
+		vsproperties = VSProperties(ips, net.__str__())
+		if self.verbose == True:			
+			print vsproperties
+		return vsproperties
+
 class OSPFNetwork: 
 	
 	def __init__(self, net, costLHS="1", costRHS="1", helloLHS="5", helloRHS="5", area="0.0.0.0"):
@@ -269,6 +294,21 @@ class VLLProperties(object):
 
 	def __str__(self):
 		return "{'ipLHS':'%s', 'ipRHS':'%s', 'net':'%s'}" %(self.ipLHS, self.ipRHS, self.net)
+
+class VSProperties(object):
+
+	def __init__(self, ips, net):
+		self.ips = ips
+		self.net = net
+		self.next = 0
+
+	def next_hostAddress(self):
+		host = self.ips[self.next]
+		self.next = self.next + 1
+		return host		
+
+	def __str__(self):
+		return "{'ips':'%s', 'net':'%s'}" %(self.ips, self.net)
 
 class VertexProperties(object):
 	
@@ -347,7 +387,9 @@ def fixNetworkManager(intf):
 
 
 if __name__ == '__main__':
+	first = IPv4Network(u"0.0.0.0/32")
+	second = IPv4Network(u"0.0.1.0/32")
+	
+	print first.compare_networks(second)
 
-	vtepAlloc = VTEPAllocator()
-	for i in range(0,33):
-		print vtepAlloc.next_vtep()
+		

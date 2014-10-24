@@ -163,6 +163,19 @@ class IPHost(Host):
 
 	def __init__(self, name, *args, **kwargs ):
 		Host.__init__( self, name, *args, **kwargs )
+		self.id = self.newId()
+
+	def newId( self ):
+		"Derive id from name, s1 -> 1"
+		try:
+			hid = int( re.findall( r'\d+', self.name )[ 0 ] )
+			hid = hex( hid )[ 2: ]
+			hid = '0' * ( 16 - len( hid ) ) + hid
+			return hid
+		except IndexError:
+			raise Exception( 'Unable to derive default ID - '
+							'please either specify a id or use a '
+							'canonical name such as cer23.' )
 	
 	def start(self, defaultVia):
 		info("%s " % self.name)
@@ -187,6 +200,11 @@ class OSHI(PrivateHost):
 	# XXX
 	zebra_exec = '/usr/lib/quagga/zebra'
 	ospfd_exec = '/usr/lib/quagga/ospfd'
+	
+	zebraPath = '/usr/lib/quagga/zebra'
+	ospfdPath = '/usr/lib/quagga/ospfd'
+
+	
 
 	ovs_initd = "/etc/init.d/openvswitchd"
 
@@ -290,21 +308,25 @@ class OSHI(PrivateHost):
 			v_eth1 = pw_data['v_eth1']
 			v_eth2 = pw_data['v_eth2']
 
-			self.cmd("ifconfig %s 0" % eth)
-			self.cmd("ifconfig %s 0" % v_eth1)
+			if eth:
+				self.cmd("ifconfig %s 0" % eth)
+			if v_eth1:
+				self.cmd("ifconfig %s 0" % v_eth1)
 			self.cmd("ifconfig %s 0" % v_eth2)
-			self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait add-port %s %s" %(self.path_ovs, self.name, eth))
-			self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait add-port %s %s" %(self.path_ovs, self.name, v_eth1))
+			if eth:
+				self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait add-port %s %s" %(self.path_ovs, self.name, eth))
+			if v_eth1:			
+				self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait add-port %s %s" %(self.path_ovs, self.name, v_eth1))
 			self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait add-port %s %s" %(self.path_ovs, self.name, v_eth2))
 
-			rules.append('ovs-ofctl -O %s add-flow %s "table=%s,hard_timeout=0,priority=%s,in_port=%s,action=output:%s"' %(self.OF_V, self.name,
-			table, 32768, eth, v_eth1))
-			rules.append('ovs-ofctl -O %s add-flow %s "table=%s,hard_timeout=0,priority=%s,in_port=%s,action=output:%s"' %(self.OF_V, self.name, 
-			table, 32768, v_eth1, eth))
-
-		for rule in rules:
-			rule = self.translate_rule(rule)
-			self.cmd(rule)
+			if eth and v_eth1:
+				rules.append('ovs-ofctl -O %s add-flow %s "table=%s,hard_timeout=0,priority=%s,in_port=%s,action=output:%s"' %(self.OF_V, self.name,
+				table, 32768, eth, v_eth1))
+				rules.append('ovs-ofctl -O %s add-flow %s "table=%s,hard_timeout=0,priority=%s,in_port=%s,action=output:%s"' %(self.OF_V, self.name, 
+				table, 32768, v_eth1, eth))
+				for rule in rules:
+					rule = self.translate_rule(rule)
+					self.cmd(rule)
 
 
 	def start( self, controllers = [], intfs_to_data = [],  coex={}):
@@ -320,6 +342,8 @@ class OSHI(PrivateHost):
 		# Running SSHD
 		self.cmd('/usr/sbin/sshd -o UseDNS=no -u0')
 
+
+		
 		if coex == {}:
 			error("ERROR coexistence is {}\n")
 			sys.exit(-2)
@@ -672,6 +696,75 @@ class VSF(PrivateHost):
 			rule = re.sub(out_port, "output:"+out_if_index+out_port_end, rule)
 
 		return rule
+
+	def terminate( self ):
+		Host.terminate(self)
+		shutil.rmtree("%s/%s" %(self.baseDIR, self.name), ignore_errors=True)
+
+	def strip_number(self, intf):
+		intf = str(intf)
+		intf_pattern = re.search(r'%s-eth\d+$' %(self.name), intf)
+		if intf_pattern is None:
+			error("ERROR bad name for intf\n")
+			sys.exit(-2)
+		data = intf.split('-')
+		return int(data[1][3:])
+
+class VS(PrivateHost):
+
+	ovs_initd = "/etc/init.d/openvswitchd"
+	baseDIR = "/tmp"
+	
+	def __init__(self, name, *args, **kwargs ):
+		dirs = ['/var/log/', '/var/run', '/var/run/openvswitch']
+		PrivateHost.__init__(self, name, privateDirs=dirs, *args, **kwargs )
+		self.path_ovs = "%s/%s/ovs" %(self.baseDIR, self.name)
+	
+		
+	def start( self, pws_data=[]):
+		info("%s " % self.name)
+	
+		if len(pws_data) == 0:
+			error("ERROR PW configuration is not possibile for %s\n" % self.name)
+			sys.exit(-2)
+
+		self.initial_configuration()
+		self.configure_ovs(pws_data)
+	
+
+	def initial_configuration(self):
+		
+		shutil.rmtree("%s/%s" %(self.baseDIR, self.name), ignore_errors=True)
+		os.mkdir("%s/%s" %(self.baseDIR, self.name))
+
+		os.mkdir(self.path_ovs)
+
+		self.cmd( 'ifconfig lo up' )
+			
+		self.cmd("ovsdb-tool create %s/conf.db" % self.path_ovs)
+		self.cmd("ovsdb-server %s/conf.db --remote=punix:%s/db.sock --remote=db:Open_vSwitch,Open_vSwitch,manager_options --no-chdir --unixctl=%s/ovsdb-server.sock --detach" %(self.path_ovs, self.path_ovs, self.path_ovs))
+		self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait init" % self.path_ovs)
+		self.cmd("ovs-vswitchd unix:%s/db.sock -vinfo --log-file=%s/ovs-vswitchd.log --no-chdir --detach" %(self.path_ovs, self.path_ovs))
+		self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait add-br %s" %(self.path_ovs, self.name))
+		self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait set-fail-mode %s standalone" %(self.path_ovs, self.name))	
+
+	def configure_ovs(self, pws_data):
+	
+		rules = []
+				
+		for pw in pws_data:
+		
+			eth = pw['eth']
+			remoteip = pw['remoteip']
+			temp = 	remoteip.split('/')
+			remoteip = temp[0]
+			remotemac = pw['remotemac']
+			gre = "gre%s" %(self.strip_number(eth))
+			
+			self.cmd( 'arp', '-s', remoteip, remotemac, '-i', eth)
+			self.cmd( 'ip', 'r', 'a', remoteip, 'dev', eth)
+			self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait add-port %s %s -- set Interface %s type=gre options:remote_ip=%s" %(self.path_ovs, 
+			self.name, gre, gre, remoteip))
 
 	def terminate( self ):
 		Host.terminate(self)

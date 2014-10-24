@@ -57,6 +57,7 @@ if __name__ == '__main__':
 	net11 = [("peo1","cer4")]
 	net12 = [("mgm1","cro2")]
 
+	vss=[["cer1", "cer2", "cer3"], ["cer2", "cer1", "cer4"], ["cer4", "cer1", "cer2", "cer3"]]
 	vlls = [("cer1","cer2"), ("cer2","cer3"), ("cer3","cer1"), ("cer1","cer4")]
 	pws = [("cer1","cer2"), ("cer2","cer3"), ("cer3","cer1"), ("cer1","cer4")]
 	
@@ -87,13 +88,18 @@ if __name__ == '__main__':
 
 	vlls_properties = []
 	for vll in vlls:
-		vll_properties = generator.getVLLsProperties(vll)
+		vll_properties = generator.getVLLProperties(vll)
 		vlls_properties.append(vll_properties)
 
 	pws_properties = []
 	for pw in pws:
-		pw_properties = generator.getVLLsProperties(pw)
+		pw_properties = generator.getVLLProperties(pw)
 		pws_properties.append(pw_properties)
+
+	vss_properties = []
+	for vs in vss:
+		vs_properties = generator.getVSProperties(vs)
+		vss_properties.append(vs_properties)
 	
 	print "*** Create Core OSHI"
 	i = 0
@@ -219,6 +225,14 @@ if __name__ == '__main__':
 		lhs_cer = net.getNodeByName(pw[0])
 		rhs_cer = net.getNodeByName(pw[1])
 		net.addPW(lhs_cer, rhs_cer, pws_properties[i])
+		i = i + 1
+
+	i = 0
+	for vs in vss:
+		endnodes = []
+		for node in vs:
+			endnodes.append(net.getNodeByName(node))
+		net.addVS(endnodes, vss_properties[i])
 		i = i + 1
 	
 	net.start()
