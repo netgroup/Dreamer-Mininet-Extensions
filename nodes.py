@@ -85,11 +85,7 @@ class OSHI(HostWithPrivateDirs):
 	# XXX
 	zebra_exec = '/usr/lib/quagga/zebra'
 	ospfd_exec = '/usr/lib/quagga/ospfd'
-	
-	zebraPath = '/usr/lib/quagga/zebra'
-	ospfdPath = '/usr/lib/quagga/ospfd'
-
-	
+	quaggaPath = '/usr/lib/quagga/'
 
 	ovs_initd = "/etc/init.d/openvswitchd"
 
@@ -142,13 +138,13 @@ class OSHI(HostWithPrivateDirs):
 		root = Node( 'root', inNamespace=False )
 		zebra = root.cmd('ls %s 2> /dev/null | wc -l' % self.zebra_exec)
 		if '1' not in zebra:
-			error( 'Cannot find required executable zebra\nPlease make sure that Zebra is properly installed in ' + self.zebraPath + '\n'
-				   'Otherwise change zebraPath variable according to your configuration\n' )
+			error( 'Cannot find required executable zebra\nPlease make sure that Zebra is properly installed in ' + self.quaggaPath + '\n'
+				   'Otherwise change quaggaPath variable according to your configuration\n' )
 			exit( 1 )
 		ospfd = root.cmd('ls %s 2> /dev/null | wc -l' % self.ospfd_exec)
 		if '1' not in ospfd:
-			error( 'Cannot find required executable ospfd\nPlease make sure that OSPFD is properly installed in ' + self.ospfdPath + '\n'
-				   'Otherwise change ospfdPath variable according to your configuration\n' )
+			error( 'Cannot find required executable ospfd\nPlease make sure that OSPFD is properly installed in ' + self.quaggaPath + '\n'
+				   'Otherwise change quaggaPath variable according to your configuration\n' )
 			exit( 1 )
 
 	def checkOVS(self):

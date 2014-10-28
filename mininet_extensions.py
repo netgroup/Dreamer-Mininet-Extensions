@@ -495,8 +495,8 @@ class MininetOSHI(Mininet):
 		root.cmd('killall dhclient')
 
 		info("*** Kill old processes\n")
-		root.cmd('killall zebra')
-		root.cmd('killall ospfd')
+		root.cmd('killall -r zebra')
+		root.cmd('killall -r ospfd')
 	
 		cfile = '/etc/environment'
 	  	line1 = 'VTYSH_PAGER=more\n'
@@ -681,8 +681,8 @@ class MininetOSHI(Mininet):
 		info("*** Kill all processes started\n")
 		root.cmd('killall ovsdb-server')
 		root.cmd('killall ovs-vswitchd')
-		root.cmd('killall zebra')
-		root.cmd('killall ospfd')
+		root.cmd('killall -r zebra')
+		root.cmd('killall -r ospfd')
 
 		info("*** Restart Avahi, Open vSwitch\n")	
 		root.cmd('/etc/init.d/avahi-daemon start')
@@ -691,8 +691,6 @@ class MininetOSHI(Mininet):
 			root.cmd('/etc/init.d/openvswitch-switch start') 
 		elif OSHI.OF_V == "OpenFlow13":
 			root.cmd('/etc/init.d/openvswitchd start')
-
-		#root.cmd('/etc/init.d/ssh start')
 
 		info('*** Unmounting host bind mounts\n')
 		unmountAll()
