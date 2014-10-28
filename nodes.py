@@ -35,128 +35,13 @@ import os
 import re
 from subprocess import Popen,PIPE
 
-from mininet.node import Host, OVSKernelSwitch, Node
-from mininet.util import errFail, quietRun
+from mininet.node import Host, OVSKernelSwitch, Node, HostWithPrivateDirs
 from mininet.log import info, error
-from os.path import realpath
 
-from utility import MNRUNDIR, unmountAll
 from coexistence_mechanisms import *
 from ingress_classifications import *
 
-
-# Class that inherits from Host and extends it with 
-# the private dirs functionalities
-class PrivateHost( Host ):
-    "Host with private directories"
-
-    mnRunDir = MNRUNDIR
-
-    def __init__(self, name, privateDirs, *args, **kwargs ):
-        """privateDirs: list of private directories
-        remounts: dirs to remount
-        unmount: unmount dirs in cleanup? (True)
-        Note: if unmount is False, you must call unmountAll()
-        manually."""
-        self.privateDirs = privateDirs
-        self.remounts = findRemounts( fstypes=[ 'devpts' ] )
-        self.unmount = False
-        Host.__init__( self, name, *args, **kwargs )
-        self.rundir = '%s/%s' % ( self.mnRunDir, name )
-        self.root, self.private = None, None  # set in createBindMounts
-        if self.privateDirs:
-            self.privateDirs = [ realpath( d ) for d in self.privateDirs ]
-            self.createBindMounts()
-        # These should run in the namespace before we chroot,
-        # in order to put the right entries in /etc/mtab
-        # Eventually this will allow a local pid space
-        # Now we chroot and cd to wherever we were before.
-        pwd = self.cmd( 'pwd' ).strip()
-        self.sendCmd( 'exec chroot', self.root, 'bash -ms mininet:'
-        + self.name )
-        self.waiting = False
-        self.cmd( 'cd', pwd )
-        # In order for many utilities to work,
-        # we need to remount /proc and /sys
-        self.cmd( 'mount /proc' )
-        self.cmd( 'mount /sys' )
-
-    def mountPrivateDirs( self ):
-        "Create and bind mount private dirs"
-        for dir_ in self.privateDirs:
-            privateDir = self.private + dir_
-            errFail( 'mkdir -p ' + privateDir )
-            mountPoint = self.root + dir_
-            errFail( 'mount -B %s %s' %
-                           ( privateDir, mountPoint) )
-
-    def mountDirs( self, dirs ):
-        "Mount a list of directories"
-        for dir_ in dirs:
-            mountpoint = self.root + dir_
-            errFail( 'mount -B %s %s' %
-                     ( dir_, mountpoint ) )
-
-    @classmethod
-    def findRemounts( cls, fstypes=None ):
-        """Identify mount points in /proc/mounts to remount
-           fstypes: file system types to match"""
-        if fstypes is None:
-            fstypes = [ 'nfs' ]
-        dirs = quietRun( 'cat /proc/mounts' ).strip().split( '\n' )
-        remounts = []
-        for dir_ in dirs:
-            line = dir_.split()
-            mountpoint, fstype = line[ 1 ], line[ 2 ]
-            # Don't re-remount directories!!!
-            if mountpoint.find( cls.mnRunDir ) == 0:
-                continue
-            if fstype in fstypes:
-                remounts.append( mountpoint )
-        return remounts
-
-    def createBindMounts( self ):
-        """Create a chroot directory structure,
-           with self.privateDirs as private dirs"""
-        errFail( 'mkdir -p '+ self.rundir )
-        unmountAll( self.rundir )
-        # Create /root and /private directories
-        self.root = self.rundir + '/root'
-        self.private = self.rundir + '/private'
-        errFail( 'mkdir -p ' + self.root )
-        errFail( 'mkdir -p ' + self.private )
-        # Recursively mount / in private doort
-        # note we'll remount /sys and /proc later
-        errFail( 'mount -B / ' + self.root )
-        self.mountDirs( self.remounts )
-        self.mountPrivateDirs()
-
-    def unmountBindMounts( self ):
-        "Unmount all of our bind mounts"
-        unmountAll( self.rundir )
-
-    def popen( self, *args, **kwargs ):
-        "Popen with chroot support"
-        chroot = kwargs.pop( 'chroot', True )
-        mncmd = kwargs.get( 'mncmd',
-                           [ 'mnexec', '-a', str( self.pid ) ] )
-        if chroot:
-            mncmd = [ 'chroot', self.root ] + mncmd
-            kwargs[ 'mncmd' ] = mncmd
-        return Host.popen( self, *args, **kwargs )
-
-    def cleanup( self ):
-        """Clean up, then unmount bind mounts
-           unmount: actually unmount bind mounts?"""
-        # Wait for process to actually terminate
-        self.shell.wait()
-        Host.cleanup( self )
-        if self.unmount:
-            self.unmountBindMounts()
-            errFail( 'rmdir ' + self.root )
-
-# Convenience aliases
-findRemounts = PrivateHost.findRemounts
+#self.remounts = findRemounts( fstypes=[ 'devpts' ] )
 
 # Simple Host with defaultVia
 class IPHost(Host):
@@ -195,7 +80,7 @@ class InBandController(IPHost):
 	
 # Class that inherits from PrivateHost and extends it with 
 # OSHI functionalities
-class OSHI(PrivateHost):
+class OSHI(HostWithPrivateDirs):
 
 	# XXX
 	zebra_exec = '/usr/lib/quagga/zebra'
@@ -219,7 +104,7 @@ class OSHI(PrivateHost):
 	
 	def __init__(self, name, loopback, *args, **kwargs ):
 		dirs = ['/var/log/', '/var/log/quagga', '/var/run', '/var/run/quagga', '/var/run/openvswitch', '/var/run/sshd']
-		PrivateHost.__init__(self, name, privateDirs=dirs, *args, **kwargs )
+		HostWithPrivateDirs.__init__(self, name, privateDirs=dirs, *args, **kwargs )
 		self.loopback = loopback
 		self.dpid = self.loopbackDpid(self.loopback, "00000000")
 		self.path_ovs = "%s/%s/ovs" %(self.baseDIR, self.name)
@@ -359,7 +244,6 @@ class OSHI(PrivateHost):
 		
 		shutil.rmtree("%s/%s" %(self.baseDIR, self.name), ignore_errors=True)
 		os.mkdir("%s/%s" %(self.baseDIR, self.name))
-
 		os.mkdir(self.path_ovs)
 		self.cmd("ovsdb-tool create %s/conf.db" % self.path_ovs)
 		self.cmd("ovsdb-server %s/conf.db --remote=punix:%s/db.sock --remote=db:Open_vSwitch,Open_vSwitch,manager_options --no-chdir --unixctl=%s/ovsdb-server.sock --detach" %(self.path_ovs, self.path_ovs, self.path_ovs))
@@ -383,6 +267,7 @@ class OSHI(PrivateHost):
 		uids = uids[:-1]
 		uid_set = uids.split("\n")
 		for uid in uid_set:
+			uid = uid.strip(' \t\n\r')
 			self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait set controller %s connection-mode=out-of-band" %(self.path_ovs, uid))
 
 		self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait -- set Bridge %s other_config:datapath-id=%s" %(self.path_ovs, self.name, self.dpid))
@@ -443,7 +328,7 @@ class OSHI(PrivateHost):
 		if output != None and output != "" :
 			return re.search( r'ofport(.*): (\d*)', output).group(2)
 		else:
-			error("ERROR port not available\n")
+			error("ERROR %s port not available\n" %in_if_name)
 			sys.exit(-2)
 
 	def translate_rule(self, rule):
@@ -571,7 +456,7 @@ class OSHI(PrivateHost):
 			self.cmd('iconfig %s 0' % eth_name)
 			vi_name = "vi%s" %(self.strip_number(eth_name))
 			self.cmd('echo 0 > /proc/sys/net/ipv4/conf/%s/rp_filter' % eth_name)
-			self.cmd('echo 0 > /proc/sys/net/ipv4/conf/%s/rp_filter' % eth_name)
+			self.cmd('echo 0 > /proc/sys/net/ipv4/conf/%s/rp_filter' % vi_name)
 		
 		self.cmd("chmod -R 777 /var/log/quagga")
 		self.cmd("chmod -R 777 /var/run/quagga")	
@@ -593,14 +478,14 @@ class OSHI(PrivateHost):
 		data = intf.split('-')
 		return int(data[1][3:])
 
-class VSF(PrivateHost):
+class VSF(HostWithPrivateDirs):
 
 	ovs_initd = "/etc/init.d/openvswitchd"
 	baseDIR = "/tmp"
 	
 	def __init__(self, name, *args, **kwargs ):
 		dirs = ['/var/log/', '/var/run', '/var/run/openvswitch']
-		PrivateHost.__init__(self, name, privateDirs=dirs, *args, **kwargs )
+		HostWithPrivateDirs.__init__(self, name, privateDirs=dirs, *args, **kwargs )
 		self.path_ovs = "%s/%s/ovs" %(self.baseDIR, self.name)
 	
 		
@@ -710,14 +595,14 @@ class VSF(PrivateHost):
 		data = intf.split('-')
 		return int(data[1][3:])
 
-class VS(PrivateHost):
+class VS(HostWithPrivateDirs):
 
 	ovs_initd = "/etc/init.d/openvswitchd"
 	baseDIR = "/tmp"
 	
 	def __init__(self, name, *args, **kwargs ):
 		dirs = ['/var/log/', '/var/run', '/var/run/openvswitch']
-		PrivateHost.__init__(self, name, privateDirs=dirs, *args, **kwargs )
+		HostWithPrivateDirs.__init__(self, name, privateDirs=dirs, *args, **kwargs )
 		self.path_ovs = "%s/%s/ovs" %(self.baseDIR, self.name)
 	
 		
@@ -779,13 +664,13 @@ class VS(PrivateHost):
 		data = intf.split('-')
 		return int(data[1][3:])
 
-# Class that inherits from PrivateHost and extends it with 
+# Class that inherits from HostWithPrivateDirs and extends it with 
 # Router functionalities
-class Router(PrivateHost):
+class Router(HostWithPrivateDirs):
 
 	def __init__(self, name, loopback, *args, **kwargs ):
 		dirs = ['/var/log/', '/var/log/quagga', '/var/run', '/var/run/quagga']
-		PrivateHost.__init__(self, name, privateDirs=dirs, *args, **kwargs )
+		HostWithPrivateDirs.__init__(self, name, privateDirs=dirs, *args, **kwargs )
 		self.loopback = loopback
 
 

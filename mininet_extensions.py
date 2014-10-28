@@ -558,15 +558,16 @@ class MininetOSHI(Mininet):
 		vscfg_file.write(json.dumps(vscfg, sort_keys=True, indent=4))
 		vscfg_file.close()
 
-		if 'DISPLAY' not in os.environ:
-			error( "Error starting terms: Cannot connect to display\n" )
-			return
-		info( "*** Running ctrls terms on %s\n" % os.environ[ 'DISPLAY' ] )
-		cleanUpScreens()
-		self.terms += makeTerms( self.ctrls, 'controller' )
-		self.terms += makeTerms( self.ctrls, 'controller2' )
-
 		if self.is_vs:
+	
+			if 'DISPLAY' not in os.environ:
+				error( "Error starting terms: Cannot connect to display\n" )
+				return
+			info( "*** Running ctrls terms on %s\n" % os.environ[ 'DISPLAY' ] )
+			cleanUpScreens()
+			self.terms += makeTerms( self.ctrls, 'controller' )
+			self.terms += makeTerms( self.ctrls, 'controller2' )
+
 			info("*** Waiting for the creation of the file %s" % self.temp_cfg)
 			info("\n")
 			while not os.path.exists(self.temp_cfg):
