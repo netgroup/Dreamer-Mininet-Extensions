@@ -274,7 +274,6 @@ class OSHI(HostWithPrivateDirs):
 		self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait init" % self.path_ovs)
 		self.cmd("ovs-vswitchd unix:%s/db.sock -vinfo --log-file=%s/ovs-vswitchd.log --no-chdir --detach" %(self.path_ovs, self.path_ovs))
 		self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait add-br %s" %(self.path_ovs, self.name))
-		self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait set bridge %s datapath_type=netdev" %(self.path_ovs, self.name))
 		self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait set bridge %s protocols=%s 2> /dev/null" %(self.path_ovs, 
 		self.name, self.OF_V))
 
