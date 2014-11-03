@@ -98,7 +98,7 @@ def o_selection(args):
 
 		i = i + 1 
 		
-		# First step (Building the topology with CERs - Steiner Nodes)
+		# First step (Building the topology considering multilink)
 		nx_topology.clear()
 		for link in topology:
 			src =link[key_src][key_dpid]
@@ -106,6 +106,7 @@ def o_selection(args):
 			nx_topology.add_edge(src, dst, src_port=link[key_src][key_name], dst_port=link[key_src][key_name])
 
 		j = 0
+		# Second step (Adding CERs=Steiner Nodes))
 		for pw in vs[key_pws]:
 				j = j + 1
 				cer = pw[key_cer_id].replace(":","")

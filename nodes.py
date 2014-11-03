@@ -33,6 +33,7 @@ import sys
 import shutil
 import os
 import re
+import time
 from subprocess import Popen,PIPE
 
 from mininet.node import Host, OVSKernelSwitch, Node, HostWithPrivateDirs
@@ -96,21 +97,39 @@ class OSHI(HostWithPrivateDirs):
 	dpidLen = 16
 
 	OF_V = "OpenFlow13"
-	
+
+	SR = True
+	SR_exec = '/usr/bin/fpm-of.bin'
+	SR_path = '/usr/bin/'
 	
 	def __init__(self, name, loopback, *args, **kwargs ):
 		dirs = ['/var/log/', '/var/log/quagga', '/var/run', '/var/run/quagga', '/var/run/openvswitch', '/var/run/sshd']
 		HostWithPrivateDirs.__init__(self, name, privateDirs=dirs, *args, **kwargs )
 		self.loopback = loopback
 		self.dpid = self.loopbackDpid(self.loopback, "00000000")
+		self.mac = self.loopbackMac(self.loopback,"0200")
 		self.path_ovs = "%s/%s/ovs" %(self.baseDIR, self.name)
 		self.path_quagga =  "%s/%s/quagga" %(self.baseDIR, self.name)
+		self.path_fpm = "%s/%s/fpm-of" %(self.baseDIR, self.name)
 		if OSHI.checked == False:
 			self.checkQuagga()
 			if self.OF_V == "OpenFlow13":
 				self.checkOVS()
+			if OSHI.SR == True:
+				self.checkSR()
 			OSHI.checked = True
+		
+
 	
+	def loopbackMac(self, loopback, extrainfo):
+		splitted_loopback = loopback.split('.')
+		hexloopback = '{:02X}{:02X}{:02X}{:02X}'.format(*map(int, splitted_loopback))
+		mac = "%s%s" %(extrainfo, hexloopback)
+		if len(mac)>12:
+			error("Unable To Derive MAC From Loopback and ExtraInfo\n")
+			sys.exit(-1)
+		return mac
+		
 	
 	def loopbackDpid(self, loopback, extrainfo):
 		splitted_loopback = loopback.split('.')
@@ -133,6 +152,14 @@ class OSHI(HostWithPrivateDirs):
 			raise Exception( 'Unable to derive default datapath ID - '
 							'please either specify a dpid or use a '
 							'canonical switch name such as s23.' )
+
+	def checkSR(self):
+		root = Node( 'root', inNamespace=False)
+		sr = root.cmd('ls %s 2> /dev/null | wc -l' % self.SR_exec)
+		if '1' not in sr:
+			error( 'Cannot find required executable fpm-of.bin\nPlease make sure that fpm-of.bin is properly installed in ' + self.sr_path + '\n'
+				   'Otherwise change sr_path variable according to your configuration\n' )
+			exit( 1 )
 
 	def checkQuagga(self):
 		root = Node( 'root', inNamespace=False )
@@ -241,11 +268,13 @@ class OSHI(HostWithPrivateDirs):
 		shutil.rmtree("%s/%s" %(self.baseDIR, self.name), ignore_errors=True)
 		os.mkdir("%s/%s" %(self.baseDIR, self.name))
 		os.mkdir(self.path_ovs)
+		
 		self.cmd("ovsdb-tool create %s/conf.db" % self.path_ovs)
 		self.cmd("ovsdb-server %s/conf.db --remote=punix:%s/db.sock --remote=db:Open_vSwitch,Open_vSwitch,manager_options --no-chdir --unixctl=%s/ovsdb-server.sock --detach" %(self.path_ovs, self.path_ovs, self.path_ovs))
 		self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait init" % self.path_ovs)
 		self.cmd("ovs-vswitchd unix:%s/db.sock -vinfo --log-file=%s/ovs-vswitchd.log --no-chdir --detach" %(self.path_ovs, self.path_ovs))
 		self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait add-br %s" %(self.path_ovs, self.name))
+		self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait set bridge %s datapath_type=netdev" %(self.path_ovs, self.name))
 		self.cmd("ovs-vsctl --db=unix:%s/db.sock --no-wait set bridge %s protocols=%s 2> /dev/null" %(self.path_ovs, 
 		self.name, self.OF_V))
 
@@ -280,6 +309,8 @@ class OSHI(HostWithPrivateDirs):
 		zebra_conf.write("log file /var/log/quagga/zebra.log\n\n")
 		ospfd_conf.close()
 		zebra_conf.close()
+
+		os.mkdir(self.path_fpm)
 	
 	def configure_ovs(self, intfs_to_data, coex):
 
@@ -460,6 +491,11 @@ class OSHI(HostWithPrivateDirs):
 
 		self.cmd("%s -f %s/zebra.conf -A 127.0.0.1 &" %(self.zebra_exec, self.path_quagga))
 		self.cmd("%s -f %s/ospfd.conf -A 127.0.0.1 &" %(self.ospfd_exec, self.path_quagga))
+
+		if OSHI.SR == True:
+			self.cmd("fpm-of.bin -b %s &" % self.name)
+
+		
 
 	def terminate( self ):
 		Host.terminate(self)

@@ -85,6 +85,7 @@ class MininetOSHI(Mininet):
 		self.last_ipnet = IPv4Network(u'0.0.0.0/24')
 
 		self.id_to_node = {}
+		self.ip_to_mac = {}
 
 			
 	def getNodeById(self, id_):
@@ -181,6 +182,14 @@ class MininetOSHI(Mininet):
 		if isinstance(rhs, InBandController):
 			rhs.ip = "%s/%s" %(properties.ipRHS, properties.net.netbit)
 			rhs.port = 6633 
+
+		if isinstance(lhs, OSHI):
+			link.intf1.setMAC(lhs.mac)
+			self.ip_to_mac[properties.ipLHS] = ':'.join(s.encode('hex') for s in lhs.mac.decode('hex'))
+			
+		if isinstance(rhs, OSHI):
+			link.intf2.setMAC(rhs.mac)
+			self.ip_to_mac[properties.ipRHS]= ':'.join(s.encode('hex') for s in rhs.mac.decode('hex'))
 
 		self.node_to_data[lhs.name].append(data_lhs)
 		self.node_to_data[rhs.name].append(data_rhs)
@@ -520,6 +529,11 @@ class MininetOSHI(Mininet):
 
 		if not self.built:
 			self.build()
+
+		ip_to_mac_file = open('/tmp/ip_to_mac.cfg', 'w')
+		ip_to_mac_file.write(json.dumps(self.ip_to_mac, sort_keys=True, indent=4))
+		ip_to_mac_file.close()
+
 		info( '*** Starting %s cr oshis\n' % len(self.cr_oshis) )
 		for cr_oshi in self.cr_oshis:
 			cr_oshi.start(self.ctrls, self.node_to_data[cr_oshi.name],  self.coex)
