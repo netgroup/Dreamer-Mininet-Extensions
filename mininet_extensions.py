@@ -212,8 +212,8 @@ class MininetOSHI(Mininet):
 		if properties.ingr.type != None:
 			self.node_to_node[lhs.name]=rhs.name
 			self.node_to_node[rhs.name]=lhs.name
-		self.node_to_default_via[lhs.name]= "%s/%s#%s" %(properties.ipRHS, properties.net.netbit, link.intf1.name)
-		self.node_to_default_via[rhs.name]= "%s/%s#%s" %(properties.ipLHS, properties.net.netbit, link.intf2.name)
+		self.node_to_default_via[lhs.name]= "%s/%s#%s#%s" %(properties.ipRHS, properties.net.netbit, link.intf1.name, "10.0.0.0/8")
+		self.node_to_default_via[rhs.name]= "%s/%s#%s#%s" %(properties.ipLHS, properties.net.netbit, link.intf2.name, "10.0.0.0/8")
 
 		if properties.net.net != None:
 			toCompare = IPv4Network("%s/%s" %(properties.net.net, properties.net.netbit))

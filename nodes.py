@@ -68,16 +68,15 @@ class IPHost(Host):
 		data = defaultVia.split("#")
 		gw = data[0].split("/")[0]
 		intf = data[1]
+		net = data[2]
 		#self.cmd('ip link set dev %s up' % intf)
-		self.cmd( 'ip route del default' )
-		self.cmd( 'route add default gw %s %s' %(gw, intf) )
+		#self.cmd( 'ip route del default' )
+		self.cmd( 'ip route add %s via %s dev %s' %(net, gw, intf) )
 
 		# Running SSHD
 		#self.cmd('chown root:root /var/run/sshd')
 		#self.cmd('chmod 711 /var/run/sshd')
-		self.cmd('/usr/sbin/sshd -o UseDNS=no -u0')
-
-		
+		self.cmd('/usr/sbin/sshd -o UseDNS=no -u0')	
 
 # Simple Host with IP and TCP port data
 class InBandController(IPHost):
