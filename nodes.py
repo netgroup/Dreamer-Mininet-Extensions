@@ -105,7 +105,7 @@ class OSHI(HostWithPrivateDirs):
 
 	OF_V = "OpenFlow13"
 
-	SR = True
+	SR = False
 	SR_exec = '/usr/bin/fpm-of.bin'
 	SR_path = '/usr/bin/'
 	
@@ -164,7 +164,7 @@ class OSHI(HostWithPrivateDirs):
 		root = Node( 'root', inNamespace=False)
 		sr = root.cmd('ls %s 2> /dev/null | wc -l' % self.SR_exec)
 		if '1' not in sr:
-			error( 'Cannot find required executable fpm-of.bin\nPlease make sure that fpm-of.bin is properly installed in ' + self.sr_path + '\n'
+			error( 'Cannot find required executable fpm-of.bin\nPlease make sure that fpm-of.bin is properly installed in ' + self.SR_path + '\n'
 				   'Otherwise change sr_path variable according to your configuration\n' )
 			exit( 1 )
 
@@ -315,8 +315,8 @@ class OSHI(HostWithPrivateDirs):
 		zebra_conf.write("log file /var/log/quagga/zebra.log\n\n")
 		ospfd_conf.close()
 		zebra_conf.close()
-
-		os.mkdir(self.path_fpm)
+		if OSHI.SR == True:
+			os.mkdir(self.path_fpm)
 	
 	def configure_ovs(self, intfs_to_data, coex):
 
