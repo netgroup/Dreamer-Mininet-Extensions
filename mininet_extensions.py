@@ -87,6 +87,13 @@ class MininetOSHI(Mininet):
 		self.id_to_node = {}
 		self.ip_to_mac = {}
 
+		
+		self.mgmt = None
+
+		root = Node( 'root', inNamespace=False )
+		root.cmd('/etc/init.d/network-manager stop')
+		info("*** Stop Network Manager\n")
+
 			
 	def getNodeById(self, id_):
 		return self.id_to_node[id_]
@@ -148,6 +155,15 @@ class MininetOSHI(Mininet):
 		self.id_to_node[ce_router.id]=ce_router
 
 		return ce_router
+
+	# Create and Add a new Remote Management
+	def addManagement(self, name=None):
+		if not name:
+			name = self.newMgmtName()
+		mgmt = Mininet.addHost(self, name, cls=IPHost, inNamespace=False)
+		self.mgmt = mgmt
+		self.nodes_in_rn.append(mgmt)
+		return mgmt
 
 	def addCoexistenceMechanism(self, coex_type, coex_data):
 
@@ -501,11 +517,12 @@ class MininetOSHI(Mininet):
 		
 		info("*** Stop unwanted traffic\n")
 		root.cmd('stop avahi-daemon')
-		root.cmd('killall dhclient')
+		#root.cmd('killall dhclient')
 
 		info("*** Kill old processes\n")
 		root.cmd('killall -r zebra')
 		root.cmd('killall -r ospfd')
+		root.cmd('killall sshd')
 	
 		cfile = '/etc/environment'
 	  	line1 = 'VTYSH_PAGER=more\n'
@@ -519,9 +536,9 @@ class MininetOSHI(Mininet):
 		if os.path.exists(self.temp_cfg):
 			os.remove(self.temp_cfg)
 		
-		root.cmd('service network-manager restart')
-		info("*** Restart Network Manager\n")
-		time.sleep(10)
+		#root.cmd('/etc/init.d/network-manager restart')
+		#info("*** Stop Network Manager\n")
+		#time.sleep(10)
 
 	def start(self):
 
@@ -557,6 +574,9 @@ class MininetOSHI(Mininet):
 		info( '*** Starting %s ce routers\n' % len(self.ce_routers) )
 		for ce_router in self.ce_routers:
 			ce_router.start(self.node_to_default_via[ce_router.name])
+		info( '\n' )
+		info( '*** Starting management server\n')
+		self.mgmt.start(self.node_to_default_via[self.mgmt.name])
 		info( '\n' )
 
 		vscfg_file = open('vs_selector.cfg', 'w')
@@ -607,6 +627,10 @@ class MininetOSHI(Mininet):
 		vllcfg['pws'] = self.pws
 		vllcfg_file.write(json.dumps(vllcfg, sort_keys=True, indent=4))
 		vllcfg_file.close()
+
+		info("*** Nodes are running sshd at the following addresses\n")
+		for host in self.hosts:
+			info("*** %s is running sshd at the following address %s\n" %(host.name, host.IP()))
 
 
 		
@@ -690,21 +714,24 @@ class MininetOSHI(Mininet):
 		root = Node( 'root', inNamespace=False )
 		
 		info("*** Restart network-manager\n")
-		root.cmd('service network-manager restart')
+		root.cmd('/etc/init.d/network-manager restart')
 		
 		info("*** Kill all processes started\n")
 		root.cmd('killall ovsdb-server')
 		root.cmd('killall ovs-vswitchd')
 		root.cmd('killall -r zebra')
 		root.cmd('killall -r ospfd')
+		root.cmd('killall sshd')
 
-		info("*** Restart Avahi, Open vSwitch\n")	
+		info("*** Restart Avahi, Open vSwitch, and sshd\n")	
 		root.cmd('/etc/init.d/avahi-daemon start')
 
 		if OSHI.OF_V == None: 
 			root.cmd('/etc/init.d/openvswitch-switch start') 
 		elif OSHI.OF_V == "OpenFlow13":
 			root.cmd('/etc/init.d/openvswitchd start')
+
+		root.cmd('/etc/init.d/ssh start')
 
 		info('*** Unmounting host bind mounts\n')
 		unmountAll()
@@ -771,5 +798,9 @@ class MininetOSHI(Mininet):
 	def newVsName(self):
 		index = str(len(self.vss) + 1)
 		name = "vs%s" % index
+		return name
+
+	def newMgmtName(self):
+		name = "mgm1"
 		return name
 

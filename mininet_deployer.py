@@ -119,6 +119,16 @@ def topo(topology):
 			print "*** %s - %s" %(ctrl, parser.ctrls_properties[i])	
 		i = i + 1
 
+	if verbose:
+		print "*** Build Management"
+	mgmt = net.addManagement(name="mgm1")
+	croshi = net.getNodeByName(croshi)	
+	
+	linkproperties = generator.getLinksProperties([(croshi.name, mgmt.name)])
+	net.addLink(croshi, mgmt, linkproperties[0])
+	if verbose:			
+		print "*** Connect", mgmt.name, "To", croshi.name, "-", linkproperties[0]
+
 #	if verbose:
 #		print "*** Build CONTROLLER"
 #	ctrl = net.addController(name="ctr1", tcp_port=6633)

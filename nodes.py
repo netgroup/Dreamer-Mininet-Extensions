@@ -68,8 +68,16 @@ class IPHost(Host):
 		data = defaultVia.split("#")
 		gw = data[0].split("/")[0]
 		intf = data[1]
+		#self.cmd('ip link set dev %s up' % intf)
 		self.cmd( 'ip route del default' )
 		self.cmd( 'route add default gw %s %s' %(gw, intf) )
+
+		# Running SSHD
+		#self.cmd('chown root:root /var/run/sshd')
+		#self.cmd('chmod 711 /var/run/sshd')
+		self.cmd('/usr/sbin/sshd -o UseDNS=no -u0')
+
+		
 
 # Simple Host with IP and TCP port data
 class InBandController(IPHost):
@@ -248,9 +256,9 @@ class OSHI(HostWithPrivateDirs):
 			sys.exit(-2)
 
 		# Running SSHD
-		#self.cmd('/usr/sbin/sshd -o UseDNS=no -u0')
-
-
+		self.cmd('chown root:root /var/run/sshd')
+		self.cmd('chmod 711 /var/run/sshd')
+		self.cmd('/usr/sbin/sshd -o UseDNS=no -u0')
 		
 		if coex == {}:
 			error("ERROR coexistence is {}\n")

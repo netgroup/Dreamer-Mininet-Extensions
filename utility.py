@@ -116,7 +116,7 @@ class VTEP(object):
 
 class PropertiesGenerator(object):
 
-	allowed_name = ["cro","peo","ctr","swi","cer"]
+	allowed_name = ["cro","peo","ctr","swi","cer","mgm"]
 
 	def __init__(self, verbose):
 		self.verbose = verbose
@@ -142,18 +142,20 @@ class PropertiesGenerator(object):
 			c = re.search(r'ctr\d+$', link[0])
 			d = re.search(r'swi\d+$', link[0])
 			e = re.search(r'cer\d+$', link[0])
+			f = re.search(r'mgm\d+$', link[0])
 			
-			if a is None and b is None and c is None and d is None and e is None:
+			if a is None and b is None and c is None and d is None and e is None and f is None:
 				print "ERROR Not Allowed Name (%s,%s)" %(link[0],link[1])
 				sys.exit(-2)
 
-			f = re.search(r'cro\d+$', link[1])
-			g = re.search(r'peo\d+$', link[1])
-			h = re.search(r'ctr\d+$', link[1])
-			i = re.search(r'swi\d+$', link[1])
-			l = re.search(r'cer\d+$', link[1])
+			g = re.search(r'cro\d+$', link[1])
+			h = re.search(r'peo\d+$', link[1])
+			i = re.search(r'ctr\d+$', link[1])
+			l = re.search(r'swi\d+$', link[1])
+			m = re.search(r'cer\d+$', link[1])
+			n = re.search(r'mgm\d+$', link[1])
 			
-			if f is None and g is None and h is None and i is None and l is None:
+			if g is None and h is None and i is None and l is None and m is None and n is None:
 				print "ERROR Not Allowed Name (%s,%s)" %(link[0],link[1])
 				sys.exit(-2)
 				
@@ -167,7 +169,7 @@ class PropertiesGenerator(object):
 				ipLHS = hosts.pop(0).__str__()
 			if i is None:
 				ipRHS = hosts.pop(0).__str__()
-			if ((b is not None or g is not None) and (e is not None or l is not None)) or ((a is not None or f is not None) and (c is not None or h is not None)):
+			if ((b is not None or h is not None) and (e is not None or m is not None)) or ((a is not None or g is not None) and (c is not None or i is not None)) or ((a is not None or g is not None) and (f is not None or n is not None)):
 				ingrType = "INGRB"
 				ingrData = None
 			if ipLHS is not None or ipRHS is not None:
@@ -219,8 +221,9 @@ class PropertiesGenerator(object):
 			c = re.search(r'ctr\d+$', node)
 			d = re.search(r'swi\d+$', node)
 			e = re.search(r'cer\d+$', node)
+			f = re.search(r'mgm\d+$', node)
 			
-			if c is None and d is None and e is None:
+			if c is None and d is None and e is None and f is None:
 				host = self.loopbackAllocator.next_hostAddress()
 				
 			vertexproperties = VertexProperties(host)
