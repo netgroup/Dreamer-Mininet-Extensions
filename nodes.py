@@ -105,11 +105,20 @@ class OSHI(HostWithPrivateDirs):
 
 	OF_V = "OpenFlow13"
 	
-	def __init__(self, name, loopback, *args, **kwargs ):
+	def __init__(self, name, loopback, CR, cluster_id, *args, **kwargs ):
 		dirs = ['/var/log/', '/var/log/quagga', '/var/run', '/var/run/quagga', '/var/run/openvswitch', '/var/run/sshd']
 		HostWithPrivateDirs.__init__(self, name, privateDirs=dirs, *args, **kwargs )
 		self.loopback = loopback
-		self.dpid = self.loopbackDpid(self.loopback, "00000000")
+
+		if cluster_id == "default":
+			cluster_id = "0"
+		cluster_id = int(cluster_id)
+		if CR:
+			cluster_id = cluster_id + 128	
+	
+		extrainfo = '%02x000000' % cluster_id
+
+		self.dpid = self.loopbackDpid(self.loopback, extrainfo)
 		self.mac = self.loopbackMac(self.loopback,"0200")
 		self.path_ovs = "%s/%s/ovs" %(self.baseDIR, self.name)
 		self.path_quagga =  "%s/%s/quagga" %(self.baseDIR, self.name)
@@ -119,8 +128,6 @@ class OSHI(HostWithPrivateDirs):
 			if self.OF_V == "OpenFlow13":
 				self.checkOVS()
 			OSHI.checked = True
-		
-
 	
 	def loopbackMac(self, loopback, extrainfo):
 		splitted_loopback = loopback.split('.')

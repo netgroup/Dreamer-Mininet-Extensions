@@ -41,15 +41,15 @@ if __name__ == '__main__':
 	cr_os = ["cro1","cro2","cro3"]
 	cr_properties = []
 	for cr in cr_os:
-		cr_properties.append({ "domain-oshi": {	"cluster_id": "" }, "loopback": ""})
+		cr_properties.append({"domain-oshi":{"layer-Control":{"cluster_id":"1"}}, "loopback": ""})
 	pe_os = ["peo1","peo2","peo3"]
 	pe_properties = []
 	for pe in pe_os:
-		pe_properties.append({ "domain-oshi": {	"cluster_id": "" }, "loopback": ""})
+		pe_properties.append({"domain-oshi":{"layer-Control":{"cluster_id":""}}, "loopback": ""})
 	ctrls = ["ctr1"]
 	ct_properties = []
 	for ctrl in ctrls:
-		ct_properties.append({ "domain-oshi": {	"cluster_id": "" }, "tcp_port": "6633"})
+		ct_properties.append({"domain-oshi":{"layer-Control":{"cluster_id":"1"}}, "tcp_port": "6633"})
 	ce_os = ["cer1","cer2","cer3","cer4"]
 	ce_properties = []
 	for ce in ce_os:
@@ -67,9 +67,9 @@ if __name__ == '__main__':
 	net10 = [("cro1","ctr1")]
 	net11 = [("peo1","cer4")]
 
-	vss=[["cer1", "cer2", "cer3"], ["cer2", "cer1", "cer4"], ["cer4", "cer1", "cer2", "cer3"]]
+	vss = []#[["cer1", "cer2", "cer3"], ["cer2", "cer1", "cer4"], ["cer4", "cer1", "cer2", "cer3"]]
 	vlls = [("cer1","cer2"), ("cer2","cer3"), ("cer3","cer1"), ("cer1","cer4")]
-	pws = [("cer1","cer2"), ("cer2","cer3"), ("cer3","cer1"), ("cer1","cer4")]
+	pws = []#[("cer1","cer2"), ("cer2","cer3"), ("cer3","cer1"), ("cer1","cer4")]
 	
 	cr_props = generator.getVerticesProperties(cr_os)
 	for cr_prop, cr_property in zip(cr_props, cr_properties):
@@ -97,15 +97,15 @@ if __name__ == '__main__':
 		vll_properties = generator.getVLLProperties(vll)
 		vlls_properties.append(vll_properties)
 
-	pws_properties = []
-	for pw in pws:
-		pw_properties = generator.getVLLProperties(pw)
-		pws_properties.append(pw_properties)
+	#pws_properties = []
+	#for pw in pws:
+	#	pw_properties = generator.getVLLProperties(pw)
+	#	pws_properties.append(pw_properties)
 
-	vss_properties = []
-	for vs in vss:
-		vs_properties = generator.getVSProperties(vs)
-		vss_properties.append(vs_properties)
+	#vss_properties = []
+	#for vs in vss:
+	#	vs_properties = generator.getVSProperties(vs)
+	#	vss_properties.append(vs_properties)
 	
 	print "*** Create Core OSHI"
 	i = 0
@@ -122,6 +122,16 @@ if __name__ == '__main__':
 	for i in range(0, len(ctrls)):
 		ctrl = net.addController(ct_properties[i], name = ctrls[i])
 		i = i + 1
+
+	if verbose:
+		print "*** Create Management"
+	mgmt = net.addManagement(name="mgm1")
+	cr_oshi = net.getNodeByName(cr_oshi.name)	
+	linkproperties = generator.getLinksProperties([(cr_oshi.name, mgmt.name)])
+	net.addLink(cr_oshi, mgmt, linkproperties[0])
+	if verbose:			
+		print "*** Connect", mgmt.name, "To", cr_oshi.name, "-", linkproperties[0]
+
 	print "*** Create Customer Edge Router"
 	i = 0
 	for i in range(0, len(ce_os)):

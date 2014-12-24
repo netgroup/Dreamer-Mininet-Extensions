@@ -94,17 +94,42 @@ class MininetOSHI(Mininet):
 		root.cmd('/etc/init.d/network-manager stop')
 		info("*** Stop Network Manager\n")
 
+		self.cluster_to_ctrl = defaultdict(list)
+		self.cluster_to_nodes = defaultdict(list)
+		self.nodes_to_cluster = {}
+
+	def manageOSHIproperties(self, properties, ctrl, name):
+		exist = properties.get("domain-oshi", None)
+		if not exist:
+			print "Error domain-oshi properties cannot be found"
+			sys.exit(-2)
+		oshi_properties = properties["domain-oshi"]
+		exist = oshi_properties.get("layer-Control", None)
+		if not exist:
+			print "Error layer-Control properties cannot be found"
+			sys.exit(-2)
+		control_properties = oshi_properties["layer-Control"]
+		cluster_id = control_properties["cluster_id"]
+		if cluster_id == "":
+			cluster_id = "default"
+		if ctrl:
+			self.cluster_to_ctrl[cluster_id].append(name)
+		else:
+			self.cluster_to_nodes[cluster_id].append(name)
+			self.nodes_to_cluster[name] = cluster_id
+
 			
 	def getNodeById(self, id_):
 		return self.id_to_node[id_]
 	
 	# Create and Add a new OSHI
-	def addOSHI(self, nodeproperties, name=None):
+	def addOSHI(self, nodeproperties, ctrl, CR, name=None):
 		loopback = nodeproperties['loopback']
 		if not loopback:
 			error("ERROR loopback not provided\n")
 			sys.exit(-2)
-		oshi = Mininet.addHost(self, name, cls=OSHI, loopback=loopback)
+		self.manageOSHIproperties(nodeproperties, ctrl, name)
+		oshi = Mininet.addHost(self, name, cls=OSHI, loopback=loopback, CR=CR, cluster_id=self.nodes_to_cluster[name])
 		self.id_to_node[oshi.dpid]=oshi
 		return oshi
 	
@@ -113,7 +138,7 @@ class MininetOSHI(Mininet):
 	def addCrOSHI(self, nodeproperties, name=None):
 		if not name:
 			name = self.newCrName()
-		oshi = self.addOSHI(nodeproperties, name)
+		oshi = self.addOSHI(nodeproperties, False, True, name)
 		self.cr_oshis.append(oshi)
 		return oshi
 		
@@ -122,7 +147,7 @@ class MininetOSHI(Mininet):
 	def addPeOSHI(self, nodeproperties, name=None):
 		if not name:
 			name = self.newPeName()
-		oshi = self.addOSHI(nodeproperties, name)
+		oshi = self.addOSHI(nodeproperties, False, False, name)
 		self.pe_oshis.append(oshi)
 		return oshi
 
@@ -132,6 +157,7 @@ class MininetOSHI(Mininet):
 		if not name:
 			name = self.newCtrlName()
 		tcp_port = int(nodeproperties['tcp_port'])
+		self.manageOSHIproperties(nodeproperties, True, name)
 		ctrl = Mininet.addHost(self, name, cls=InBandController, tcp_port=tcp_port)
 		self.ctrls.append(ctrl)
 		return ctrl
@@ -553,7 +579,13 @@ class MininetOSHI(Mininet):
 
 		info( '*** Starting %s cr oshis\n' % len(self.cr_oshis) )
 		for cr_oshi in self.cr_oshis:
-			cr_oshi.start(self.ctrls, self.node_to_data[cr_oshi.name],  self.coex)
+			cluster = self.nodes_to_cluster[cr_oshi.name]
+			ctrls_names = []
+			ctrls_names = self.cluster_to_ctrl[cluster]
+			ctrls = []
+			for ctrl_name in ctrls_names:
+				ctrls.append(self.getNodeByName(ctrl_name))
+			cr_oshi.start(ctrls, self.node_to_data[cr_oshi.name],  self.coex)
 
 		coexFactory = CoexFactory()
 		coex = coexFactory.getCoex(self.coex['coex_type'], self.coex['coex_data'], [], [], "", OSHI.OF_V)		
@@ -561,7 +593,12 @@ class MininetOSHI(Mininet):
 		info( '\n' )
 		info( '*** Starting %s pe oshis\n' % len(self.pe_oshis) )
 		for pe_oshi in self.pe_oshis:
-			pe_oshi.start(self.ctrls, self.node_to_data[pe_oshi.name],  self.coex)
+			cluster = self.nodes_to_cluster[pe_oshi.name]
+			ctrls_names = self.cluster_to_ctrl[cluster]
+			ctrls = []
+			for ctrl_name in ctrls_names:
+				ctrls.append(self.getNodeByName(ctrl_name))
+			pe_oshi.start(ctrls, self.node_to_data[pe_oshi.name],  self.coex)
 		info( '\n' )
 		info( '*** Starting %s vsfs\n' % len(self.vsfs) )
 		for vsf in self.vsfs:

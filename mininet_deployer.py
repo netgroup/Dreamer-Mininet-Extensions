@@ -54,6 +54,7 @@ def topo(topology):
 	parser = TopoParser(topology, verbose = False)
 	(ppsubnets, l2subnets) = parser.getsubnets()
 	vlls = parser.getVLLs()
+	pws = parser.getPWs()
 	# XXX
 	if parser.generated == False:
 		if verbose:
@@ -81,6 +82,12 @@ def topo(topology):
 		vlls_properties = []
 		for vll in vlls:
 			vlls_properties.append(generator.getVLLProperties(vll))
+
+		if verbose:
+			print "*** Build PWs Properties"
+		pws_properties = []
+		for pw in pws:
+			pws_properties.append(generator.getVLLProperties(pw))
 			
 
 	set_cr_oshis = parser.cr_oshis
@@ -129,29 +136,6 @@ def topo(topology):
 	if verbose:			
 		print "*** Connect", mgmt.name, "To", croshi.name, "-", linkproperties[0]
 
-#	if verbose:
-#		print "*** Build CONTROLLER"
-#	ctrl = net.addController(name="ctr1", tcp_port=6633)
-#	croshi = net.getNodeByName(croshi)	
-	
-#	linkproperties = generator.getLinksProperties([(croshi.name, ctrl.name)])
-#	linkproperties[0].ingr.type = "INGRB"
-#	linkproperties[0].ingr.data = None
-#	net.addLink(croshi, ctrl, linkproperties[0])
-#	if verbose:			
-#		print "*** Connect", ctrl.name, "To", croshi.name
-
-#	if verbose:
-#		print "*** Build CONTROLLER2"
-#	ctrl2 = net.addController(name="ctr2", tcp_port=6633)	
-#	croshi2 = net.getNodeByName(set_cr_oshis[0])
-#	linkproperties = generator.getLinksProperties([(croshi2.name, ctrl2.name)])
-#	linkproperties[0].ingr.type = "INGRB"
-#	linkproperties[0].ingr.data = None
-#	net.addLink(croshi2, ctrl2, linkproperties[0])
-#	if verbose:			
-#		print "*** Connect", ctrl2.name, "To", croshi2.name
-
 	if verbose:
 		print "*** Build CERS"
 	i = 0
@@ -176,24 +160,6 @@ def topo(topology):
 				print "*** Link Properties", pp_properties[i][0]
 			i = i + 1
 
-	if verbose:	
-		print "*** Create Switched Networks"
-	j = 0
-	#for l2subnet in l2subnets:
-	#		links = l2subnet.links
-	#		if verbose:
-	#				print "*** Subnet: Node %s - Links %s" %(l2subnet.nodes, links)
-	#		i = 0
-	#		for link in links:
-	#			node1 = link[0]
-	#			node2 = link[1]
-	#			[(lhs_vi, lhs_tap, lhs_ospf_net), (rhs_vi, rhs_tap, rhs_ospf_net)] = testbed.addLink(node1, node2, l2_properties[j][i])
-	#			if verbose:			
-	#				print "*** Connect", node1, "To", node2
-	#				print "*** Link Properties", l2_properties[j][i]
-	#			i = i + 1
-	#		j = j + 1
-
 	i = 0
 	for vll in vlls:
 		node1 = net.getNodeByName(vll[0])
@@ -202,6 +168,15 @@ def topo(topology):
 		if verbose:			
 			print "*** VLLs Properties", vlls_properties[i]
 		i = i + 1	
+
+	i = 0
+	for pw in pws:
+		node1 = net.getNodeByName(pw[0])
+		node2 = net.getNodeByName(pw[1])
+		net.addPW(node1, node2, pws_properties[i])
+		if verbose:			
+			print "*** PWs Properties", pws_properties[i]
+		i = i + 1
 	
 	net.start()
 	CLI(net)
