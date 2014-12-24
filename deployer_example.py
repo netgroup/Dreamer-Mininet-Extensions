@@ -45,7 +45,7 @@ if __name__ == '__main__':
 	pe_os = ["peo1","peo2","peo3"]
 	pe_properties = []
 	for pe in pe_os:
-		pe_properties.append({"domain-oshi":{"layer-Control":{"cluster_id":""}}, "loopback": ""})
+		pe_properties.append({"domain-oshi":{"layer-Control":{"cluster_id":"1"}}, "loopback": ""})
 	ctrls = ["ctr1"]
 	ct_properties = []
 	for ctrl in ctrls:

@@ -104,6 +104,10 @@ class OSHI(HostWithPrivateDirs):
 	dpidLen = 16
 
 	OF_V = "OpenFlow13"
+
+	SR = False
+	SR_exec = '/usr/bin/fpm-of.bin'
+	SR_path = '/usr/bin/'
 	
 	def __init__(self, name, loopback, CR, cluster_id, *args, **kwargs ):
 		dirs = ['/var/log/', '/var/log/quagga', '/var/run', '/var/run/quagga', '/var/run/openvswitch', '/var/run/sshd']
@@ -127,6 +131,8 @@ class OSHI(HostWithPrivateDirs):
 			self.checkQuagga()
 			if self.OF_V == "OpenFlow13":
 				self.checkOVS()
+			if OSHI.SR == True:
+				self.checkSR()
 			OSHI.checked = True
 	
 	def loopbackMac(self, loopback, extrainfo):
@@ -160,6 +166,14 @@ class OSHI(HostWithPrivateDirs):
 			raise Exception( 'Unable to derive default datapath ID - '
 							'please either specify a dpid or use a '
 							'canonical switch name such as s23.' )
+
+	def checkSR(self):
+		root = Node( 'root', inNamespace=False)
+		sr = root.cmd('ls %s 2> /dev/null | wc -l' % self.SR_exec)
+		if '1' not in sr:
+			error( 'Cannot find required executable fpm-of.bin\nPlease make sure that fpm-of.bin is properly installed in ' + self.SR_path + '\n'
+				   'Otherwise change sr_path variable according to your configuration\n' )
+			exit( 1 )
 
 	def checkQuagga(self):
 		root = Node( 'root', inNamespace=False )
@@ -308,6 +322,9 @@ class OSHI(HostWithPrivateDirs):
 		zebra_conf.write("log file /var/log/quagga/zebra.log\n\n")
 		ospfd_conf.close()
 		zebra_conf.close()
+
+		if OSHI.SR == True:
+			os.mkdir(self.path_fpm)
 	
 	def configure_ovs(self, intfs_to_data, coex):
 
@@ -488,6 +505,9 @@ class OSHI(HostWithPrivateDirs):
 
 		self.cmd("%s -f %s/zebra.conf -A 127.0.0.1 &" %(self.zebra_exec, self.path_quagga))
 		self.cmd("%s -f %s/ospfd.conf -A 127.0.0.1 &" %(self.ospfd_exec, self.path_quagga))
+
+		if OSHI.SR == True:
+			self.cmd("fpm-of.bin -b %s &" % self.name)
 
 	def terminate( self ):
 		Host.terminate(self)
