@@ -1,0 +1,155 @@
+{
+    "customers_vtep": {
+        "0": "172.16.0.21"
+    }, 
+    "last_ipnet": "10.0.14.0/24", 
+    "tableIP": 0, 
+    "tableSBP": 1, 
+    "vss": [
+        {
+            "cid": 0, 
+            "pws": [
+                {
+                    "cer_id": "00:00:00:00:00:00:00:01", 
+                    "lhs_gre_ip": "172.16.0.1/12", 
+                    "lhs_gre_mac": "00:00:ac:10:00:01", 
+                    "lhs_id": "01:00:00:00:ac:10:00:04", 
+                    "lhs_intf": "peo1-eth5", 
+                    "lhs_label": "0", 
+                    "rhs_gre_ip": "172.16.0.2/12", 
+                    "rhs_gre_mac": "00:00:ac:10:00:02", 
+                    "rhs_id": null, 
+                    "rhs_intf": null, 
+                    "rhs_label": "0"
+                }, 
+                {
+                    "cer_id": "00:00:00:00:00:00:00:02", 
+                    "lhs_gre_ip": "172.16.0.3/12", 
+                    "lhs_gre_mac": "00:00:ac:10:00:03", 
+                    "lhs_id": "01:00:00:00:ac:10:00:05", 
+                    "lhs_intf": "peo2-eth4", 
+                    "lhs_label": "0", 
+                    "rhs_gre_ip": "172.16.0.4/12", 
+                    "rhs_gre_mac": "00:00:ac:10:00:04", 
+                    "rhs_id": null, 
+                    "rhs_intf": null, 
+                    "rhs_label": "0"
+                }, 
+                {
+                    "cer_id": "00:00:00:00:00:00:00:03", 
+                    "lhs_gre_ip": "172.16.0.5/12", 
+                    "lhs_gre_mac": "00:00:ac:10:00:05", 
+                    "lhs_id": "01:00:00:00:ac:10:00:06", 
+                    "lhs_intf": "peo3-eth4", 
+                    "lhs_label": "0", 
+                    "rhs_gre_ip": "172.16.0.6/12", 
+                    "rhs_gre_mac": "00:00:ac:10:00:06", 
+                    "rhs_id": null, 
+                    "rhs_intf": null, 
+                    "rhs_label": "0"
+                }
+            ]
+        }, 
+        {
+            "cid": 0, 
+            "pws": [
+                {
+                    "cer_id": "00:00:00:00:00:00:00:02", 
+                    "lhs_gre_ip": "172.16.0.7/12", 
+                    "lhs_gre_mac": "00:00:ac:10:00:07", 
+                    "lhs_id": "01:00:00:00:ac:10:00:05", 
+                    "lhs_intf": "peo2-eth7", 
+                    "lhs_label": "0", 
+                    "rhs_gre_ip": "172.16.0.8/12", 
+                    "rhs_gre_mac": "00:00:ac:10:00:08", 
+                    "rhs_id": null, 
+                    "rhs_intf": null, 
+                    "rhs_label": "0"
+                }, 
+                {
+                    "cer_id": "00:00:00:00:00:00:00:01", 
+                    "lhs_gre_ip": "172.16.0.9/12", 
+                    "lhs_gre_mac": "00:00:ac:10:00:09", 
+                    "lhs_id": "01:00:00:00:ac:10:00:04", 
+                    "lhs_intf": "peo1-eth8", 
+                    "lhs_label": "0", 
+                    "rhs_gre_ip": "172.16.0.10/12", 
+                    "rhs_gre_mac": "00:00:ac:10:00:0a", 
+                    "rhs_id": null, 
+                    "rhs_intf": null, 
+                    "rhs_label": "0"
+                }, 
+                {
+                    "cer_id": "00:00:00:00:00:00:00:04", 
+                    "lhs_gre_ip": "172.16.0.11/12", 
+                    "lhs_gre_mac": "00:00:ac:10:00:0b", 
+                    "lhs_id": "01:00:00:00:ac:10:00:04", 
+                    "lhs_intf": "peo1-eth11", 
+                    "lhs_label": "0", 
+                    "rhs_gre_ip": "172.16.0.12/12", 
+                    "rhs_gre_mac": "00:00:ac:10:00:0c", 
+                    "rhs_id": null, 
+                    "rhs_intf": null, 
+                    "rhs_label": "0"
+                }
+            ]
+        }, 
+        {
+            "cid": 0, 
+            "pws": [
+                {
+                    "cer_id": "00:00:00:00:00:00:00:04", 
+                    "lhs_gre_ip": "172.16.0.13/12", 
+                    "lhs_gre_mac": "00:00:ac:10:00:0d", 
+                    "lhs_id": "01:00:00:00:ac:10:00:04", 
+                    "lhs_intf": "peo1-eth14", 
+                    "lhs_label": "0", 
+                    "rhs_gre_ip": "172.16.0.14/12", 
+                    "rhs_gre_mac": "00:00:ac:10:00:0e", 
+                    "rhs_id": null, 
+                    "rhs_intf": null, 
+                    "rhs_label": "0"
+                }, 
+                {
+                    "cer_id": "00:00:00:00:00:00:00:01", 
+                    "lhs_gre_ip": "172.16.0.15/12", 
+                    "lhs_gre_mac": "00:00:ac:10:00:0f", 
+                    "lhs_id": "01:00:00:00:ac:10:00:04", 
+                    "lhs_intf": "peo1-eth17", 
+                    "lhs_label": "0", 
+                    "rhs_gre_ip": "172.16.0.16/12", 
+                    "rhs_gre_mac": "00:00:ac:10:00:10", 
+                    "rhs_id": null, 
+                    "rhs_intf": null, 
+                    "rhs_label": "0"
+                }, 
+                {
+                    "cer_id": "00:00:00:00:00:00:00:02", 
+                    "lhs_gre_ip": "172.16.0.17/12", 
+                    "lhs_gre_mac": "00:00:ac:10:00:11", 
+                    "lhs_id": "01:00:00:00:ac:10:00:05", 
+                    "lhs_intf": "peo2-eth10", 
+                    "lhs_label": "0", 
+                    "rhs_gre_ip": "172.16.0.18/12", 
+                    "rhs_gre_mac": "00:00:ac:10:00:12", 
+                    "rhs_id": null, 
+                    "rhs_intf": null, 
+                    "rhs_label": "0"
+                }, 
+                {
+                    "cer_id": "00:00:00:00:00:00:00:03", 
+                    "lhs_gre_ip": "172.16.0.19/12", 
+                    "lhs_gre_mac": "00:00:ac:10:00:13", 
+                    "lhs_id": "01:00:00:00:ac:10:00:06", 
+                    "lhs_intf": "peo3-eth7", 
+                    "lhs_label": "0", 
+                    "rhs_gre_ip": "172.16.0.20/12", 
+                    "rhs_gre_mac": "00:00:ac:10:00:14", 
+                    "rhs_id": null, 
+                    "rhs_intf": null, 
+                    "rhs_label": "0"
+                }
+            ]
+        }
+    ]
+}

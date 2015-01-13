@@ -67,9 +67,9 @@ if __name__ == '__main__':
 	net10 = [("cro1","ctr1")]
 	net11 = [("peo1","cer4")]
 
-	vss = []#[["cer1", "cer2", "cer3"], ["cer2", "cer1", "cer4"], ["cer4", "cer1", "cer2", "cer3"]]
+	vss = [["cer1", "cer2", "cer3"], ["cer2", "cer1", "cer4"], ["cer4", "cer1", "cer2", "cer3"]]
 	vlls = [("cer1","cer2"), ("cer2","cer3"), ("cer3","cer1"), ("cer1","cer4")]
-	pws = []#[("cer1","cer2"), ("cer2","cer3"), ("cer3","cer1"), ("cer1","cer4")]
+	pws = [("cer1","cer2"), ("cer2","cer3"), ("cer3","cer1"), ("cer1","cer4")]
 	
 	cr_props = generator.getVerticesProperties(cr_os)
 	for cr_prop, cr_property in zip(cr_props, cr_properties):
@@ -97,15 +97,15 @@ if __name__ == '__main__':
 		vll_properties = generator.getVLLProperties(vll)
 		vlls_properties.append(vll_properties)
 
-	#pws_properties = []
-	#for pw in pws:
-	#	pw_properties = generator.getVLLProperties(pw)
-	#	pws_properties.append(pw_properties)
+	pws_properties = []
+	for pw in pws:
+		pw_properties = generator.getVLLProperties(pw)
+		pws_properties.append(pw_properties)
 
-	#vss_properties = []
-	#for vs in vss:
-	#	vs_properties = generator.getVSProperties(vs)
-	#	vss_properties.append(vs_properties)
+	vss_properties = []
+	for vs in vss:
+		vs_properties = generator.getVSProperties(vs)
+		vss_properties.append(vs_properties)
 	
 	print "*** Create Core OSHI"
 	i = 0

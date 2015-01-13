@@ -667,7 +667,8 @@ class MininetOSHI(Mininet):
 
 		info("*** Nodes are running sshd at the following addresses\n")
 		for host in self.hosts:
-			info("*** %s is running sshd at the following address %s\n" %(host.name, host.IP()))
+			if "vs" not in host.name: 
+				info("*** %s is running sshd at the following address %s\n" %(host.name, host.IP()))
 
 
 		
@@ -763,10 +764,8 @@ class MininetOSHI(Mininet):
 		info("*** Restart Avahi, Open vSwitch, and sshd\n")	
 		root.cmd('/etc/init.d/avahi-daemon start')
 
-		if OSHI.OF_V == None: 
-			root.cmd('/etc/init.d/openvswitch-switch start') 
-		elif OSHI.OF_V == "OpenFlow13":
-			root.cmd('/etc/init.d/openvswitchd start')
+		
+		root.cmd('/etc/init.d/openvswitchd start')
 
 		root.cmd('/etc/init.d/ssh start')
 

@@ -217,7 +217,7 @@ class OSHI(HostWithPrivateDirs):
 
 	def start_pw( self, table, pws_data = []):
 		
-		if self.OF_V != "OpenFlow13":
+		if self.OF_V != "OpenFlow13" and len(pws_data) != 0:
 			error("ERROR PW configuration is not possibile for %s - OpenFlow version != 1.3\n" % self.name)
 			sys.exit(-2)	
 	
