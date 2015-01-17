@@ -131,7 +131,7 @@
 		},
 		"peo6": {
 			"pos": {
-				"x": 687.4504990019961,
+				"x": 687.4504990019963,
 				"y": 391.60583941605836
 			},
 			"v": {
@@ -170,6 +170,33 @@
 				"node-type": "CE",
 				"property": {
 					"custom_label": "",
+					"vm": {
+						"interfaces": "",
+						"mgt_ip": ""
+					}
+				}
+			}
+		},
+		"ctr8": {
+			"pos": {
+				"x": 396,
+				"y": 76
+			},
+			"v": {
+				"x": 0,
+				"y": 0
+			},
+			"vertex_info": {
+				"frozen": false,
+				"node-type": "OF Controller",
+				"property": {
+					"custom_label": "",
+					"domain-oshi": {
+						"layer-Control": {
+							"cluster_id": ""
+						}
+					},
+					"tcp_port": "6633",
 					"vm": {
 						"interfaces": "",
 						"mgt_ip": ""
@@ -267,7 +294,15 @@
 				},
 				{
 					"link_label": "",
-					"link-type": "Pw"
+					"link-type": "PW"
+				}
+			]
+		},
+		"ctr8&&cro3": {
+			"links": [
+				{
+					"link_label": "",
+					"link-type": "Data"
 				}
 			]
 		}

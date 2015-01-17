@@ -27,8 +27,30 @@ Mininet Extensions Dependencies
 
 2) ipaddress (pip)
 
-3) Quagga (apt)
+3) OSHI dependecies, see setup.sh of the [Dreamer-Setup-Scripts](https://github.com/netgroup/Dreamer-Setup-Scripts) project
 
-4) [Mininet](http://mininet.org)
+3.1) Open vSwitch 2.390 for MPLS-VLL and MPLS-PW [Open vSwitch](https://github.com/openvswitch/ovs) (git)
 
-3) [Dreamer-Topology-Parser-and-Validator](https://github.com/netgroup/Dreamer-Topology-Parser-and-Validator) (git)
+3.2) RYU for MPLS-VS, MPLS-PW and MPLS-VLL [RYU](https://github.com/osrg/ryu) (git)
+
+3.3) networkx for MPLS-VS (pip)
+
+4) Open vSwitchd service (init.d):
+
+#####Install the Open vSwitchd service:
+
+		sudo update-rc.d -f openvswitch-controller remove
+		sudo update-rc.d -f openvswitch-switch remove
+		./install.sh
+
+5) [Mininet](http://mininet.org), in particular the commit: aae0affae46a63ef5e54d86351c96417c3888112 (git)
+
+#####Install the commit
+
+		git clone git://github.com/mininet/mininet
+		cd mininet/
+		git reset --hard aae0affae46a63ef5e54d86351c96417c3888112
+		cd ..
+		mininet/util/install.sh -ent
+
+6) [Dreamer-Topology-Parser-and-Validator](https://github.com/netgroup/Dreamer-Topology-Parser-and-Validator) (git)
