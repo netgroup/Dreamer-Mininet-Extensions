@@ -32,6 +32,7 @@ import subprocess
 import json
 import os
 import signal
+import shutil
 from collections import defaultdict
 from ipaddress import IPv4Network
 
@@ -48,9 +49,14 @@ from coexistence_mechanisms import *
 class MininetOSHI(Mininet):
 
 	temp_cfg = "temp.cfg"
+	VS_OPTION = '-o'
+	RYU_PATH = '' #'/home/conet/workspace/ryu/ryu/app/'
+	PROJECT_PATH = '' #'/home/conet/workspace/Dreamer-Mininet-Extensions/'
 
 	
 	def __init__(self, verbose=False):
+
+		self.checkPATHs()
 
 		Mininet.__init__(self, build=False)
 
@@ -98,15 +104,25 @@ class MininetOSHI(Mininet):
 		self.cluster_to_nodes = defaultdict(list)
 		self.nodes_to_cluster = {}
 
+	def checkPATHs(self):
+
+		if MininetOSHI.RYU_PATH == "":
+			error("Error Set RYU_PATH In MininetOSHI\n")
+			sys.exit(-2)
+
+		if MininetOSHI.PROJECT_PATH == "":
+			error("Error Set PROJECT_PATH In MininetOSHI\n")
+			sys.exit(-2)
+
 	def manageOSHIproperties(self, properties, ctrl, name):
 		exist = properties.get("domain-oshi", None)
 		if not exist:
-			print "Error domain-oshi properties cannot be found"
+			error("Error domain-oshi properties cannot be found\n")
 			sys.exit(-2)
 		oshi_properties = properties["domain-oshi"]
 		exist = oshi_properties.get("layer-Control", None)
 		if not exist:
-			print "Error layer-Control properties cannot be found"
+			error("Error layer-Control properties cannot be found\n")
 			sys.exit(-2)
 		control_properties = oshi_properties["layer-Control"]
 		cluster_id = control_properties["cluster_id"]
@@ -631,6 +647,7 @@ class MininetOSHI(Mininet):
 
 		if self.is_vs:
 	
+			"""
 			if 'DISPLAY' not in os.environ:
 				error( "Error starting terms: Cannot connect to display\n" )
 				return
@@ -641,8 +658,24 @@ class MininetOSHI(Mininet):
 
 			info("*** Waiting for the creation of the file %s" % self.temp_cfg)
 			info("\n")
+			"""
+
+			info("*** Starting VS selection\n")
+			shutil.copyfile("vs_selector.cfg", "ext/vs_selector.cfg")
+			controller = self.ctrls[0]
+			
+			info("*** Launch RYU Controller\n")
+			controller.cmd('cd', MininetOSHI.RYU_PATH)
+			controller.cmd('ryu-manager', '--observe-links', 'rest_topology.py', 'ofctl_rest.py', "&")
+			controller.cmd('cd', "%s/ext/" % MininetOSHI.PROJECT_PATH)
+
+			info("*** Launch VS Selector\n")
 			while not os.path.exists(self.temp_cfg):
-				time.sleep(10)
+				controller.cmd('./vs_selector.py','--controller localhost:8080', MininetOSHI.VS_OPTION)
+				time.sleep(5)
+			root = Node( 'root', inNamespace=False )
+			info("*** Kill all processes started\n")
+			root.cmd('killall ryu-manager')
 			self.configureVS()
 			
 			info( '*** Starting and configuring %s vss\n' % len(self.vss) )
