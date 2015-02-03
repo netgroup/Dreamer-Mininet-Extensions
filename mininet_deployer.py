@@ -52,9 +52,10 @@ def topo(topology):
 	if verbose:
 		print "*** Build Topology From Parsed File"
 	parser = TopoParser(topology, verbose = False)
-	(ppsubnets, l2subnets) = parser.getsubnets()
+	ppsubnets = parser.getsubnets()
 	vlls = parser.getVLLs()
 	pws = parser.getPWs()
+	vss = parser.getVSs()
 	# XXX
 	if parser.generated == False:
 		if verbose:
@@ -88,6 +89,13 @@ def topo(topology):
 		pws_properties = []
 		for pw in pws:
 			pws_properties.append(generator.getVLLProperties(pw))
+
+		if verbose:
+			print "*** Build VSs Properties"
+		vss_properties = []
+		for vs in vss:
+			vs_properties = generator.getVSProperties(vs)
+			vss_properties.append(vs_properties)
 			
 
 	set_cr_oshis = parser.cr_oshis
@@ -176,6 +184,16 @@ def topo(topology):
 		net.addPW(node1, node2, pws_properties[i])
 		if verbose:			
 			print "*** PWs Properties", pws_properties[i]
+		i = i + 1
+
+	i = 0
+	for vs in vss:
+		endnodes = []
+		for node in vs:
+			endnodes.append(net.getNodeByName(node))
+		net.addVS(endnodes, vss_properties[i])
+		if verbose:			
+			print "*** VSs Properties", vss_properties[i]
 		i = i + 1
 	
 	net.start()
