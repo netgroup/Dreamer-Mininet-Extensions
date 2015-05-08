@@ -1,11 +1,15 @@
-![Alt text](repo_data/dreamer-logo.png "Optional title")
+![OSHI and DREAMER logos](http://netgroup.uniroma2.it/twiki/pub/Oshi/WebHome/dreamer-oshi-logo-github.png "http://netgroup.uniroma2.it/OSHI")
 
 Dreamer-Mininet-Extensions
 ==========================
 
-Mininet Extensions For Dreamer Project (GÉANT Open Call).
+Mininet Extensions for OSHI experiments.
 
-Using this tool you can emulate OSHI networks on Mininet environment.
+This tool is used to emulate OSHI networks using the Mininet emulator.
+
+This a result of the [DREAMER project](http://netgroup.uniroma2.it/DREAMER/).  
+Addtional documentation is available at http://netgroup.uniroma2.it/OSHI/ .
+
 
 License
 =======
