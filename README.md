@@ -57,4 +57,4 @@ Mininet Extensions Dependencies
 		cd ..
 		mininet/util/install.sh -ent
 
-6) [Dreamer-Topology-Parser-and-Validator](https://github.com/netgroup/Dreamer-Topology-Parser-and-Validator) (git)
+6) [Dreamer-Topology-Parser](https://github.com/netgroup/Dreamer-Topology-Parser-and-Validator) (git)
