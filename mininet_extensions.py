@@ -723,13 +723,13 @@ class MininetOSHI(Mininet):
 			self.stop()
 			exit(-1)
 
-		info("############################\n")
+		info("#######################################\n")
 		for vs in cfg['vss']:
 
 			cid = vs['cid']
 			id_ = vs['id']
 
-			info("vs: vs%s\n" % id_)
+			info("The VSS %s\n is composed by these PWs:" % id_)
 
 			for pw in vs['pws']:
 
@@ -775,7 +775,7 @@ class MininetOSHI(Mininet):
 				info("(%s,%s)" %(lhs_intf,vslink2.intf1.name))
 
 				self.addLineToPWCFG(lhs_id, lhs_intf, lhs_vtep, rhs_peo.dpid, vslink2.intf1.name, rhs_vtep)
-			info("\n#################################\n")		
+			info("\n#######################################\n")		
 
 	def getVSByIDandPEO(self, id_, peo):
 		key = "%s-%s" %(id_,peo)
