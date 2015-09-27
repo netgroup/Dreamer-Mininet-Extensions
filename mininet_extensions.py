@@ -775,7 +775,7 @@ class MininetOSHI(Mininet):
 				info("(%s,%s)" %(lhs_intf,vslink2.intf1.name))
 
 				self.addLineToPWCFG(lhs_id, lhs_intf, lhs_vtep, rhs_peo.dpid, vslink2.intf1.name, rhs_vtep)
-			info("#######################################\n")		
+			info("\n#######################################\n")		
 
 	def getVSByIDandPEO(self, id_, peo):
 		key = "%s-%s" %(id_,peo)
