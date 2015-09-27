@@ -729,7 +729,7 @@ class MininetOSHI(Mininet):
 			cid = vs['cid']
 			id_ = vs['id']
 
-			info("The VSS %s\n is composed by these PWs:" % id_)
+			info("The VSS %s is composed by these PWs:" % id_)
 
 			for pw in vs['pws']:
 
