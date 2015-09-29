@@ -69,6 +69,7 @@ class MininetOSHI(Mininet):
 		self.node_to_node = {}
 		self.node_to_default_via = {}
 		self.coex = {}
+		
 
 		self.verbose = verbose
 		lg.setLogLevel('info')
@@ -699,9 +700,13 @@ class MininetOSHI(Mininet):
 		vllcfg_file.close()
 
 		info("*** Nodes are running sshd at the following addresses\n")
+		path = './ip_node.json'
+		if os.path.exists(path):
+			os.remove(path)
 		for host in self.hosts:
 			if "vs" not in host.name: 
 				info("*** %s is running sshd at the following address %s\n" %(host.name, host.IP()))
+				self.store_ip_node(host.name,host.IP())
 
 
 		
@@ -718,10 +723,13 @@ class MininetOSHI(Mininet):
 			self.stop()
 			exit(-1)
 
+		info("#######################################\n")
 		for vs in cfg['vss']:
 
 			cid = vs['cid']
 			id_ = vs['id']
+
+			info("The VSS %s is composed by these PWs:" % id_)
 
 			for pw in vs['pws']:
 
@@ -764,7 +772,10 @@ class MininetOSHI(Mininet):
 
 				rhs_vtep = VTEP(pw['rhs_gre_ip'], pw['rhs_gre_mac'].upper().replace(":",""))
 
-				self.addLineToPWCFG(lhs_id, lhs_intf, lhs_vtep, rhs_peo.dpid, vslink2.intf1.name, rhs_vtep)			
+				info("(%s,%s)" %(lhs_intf,vslink2.intf1.name))
+
+				self.addLineToPWCFG(lhs_id, lhs_intf, lhs_vtep, rhs_peo.dpid, vslink2.intf1.name, rhs_vtep)
+			info("\n#######################################\n")		
 
 	def getVSByIDandPEO(self, id_, peo):
 		key = "%s-%s" %(id_,peo)
@@ -808,13 +819,13 @@ class MininetOSHI(Mininet):
 	def stop(self):
 
 		if self.terms:
-		    info( '*** Stopping %i terms\n' % len( self.terms ) )
-		    self.stopXterms()
+			info( '*** Stopping %i terms\n' % len( self.terms ) )
+			self.stopXterms()
 
 		info( '*** Stopping %i hosts\n' % len( self.hosts ) )
 		for host in self.hosts:
-		    info( host.name + ' ' )
-		    host.terminate()
+			info( host.name + ' ' )
+			host.terminate()
 		
 		info( '\n' )
 		self.cleanEnvironment()
@@ -873,3 +884,12 @@ class MininetOSHI(Mininet):
 		name = "mgm1"
 		return name
 
+	def store_ip_node(self,name,ip):
+		# Store created vll attributes in local ./vlls_shp.json
+		#datetime = time.asctime()
+			
+		ipParam = {'name': name, 'ip':ip}
+		stro = json.dumps(ipParam)
+		ipNode = open('./ip_node.json','a+')
+		ipNode.write(stro+"\n")
+		ipNode.close()
