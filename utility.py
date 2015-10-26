@@ -35,7 +35,9 @@ from ipaddress import *
 import sys
 import re
 
+#management networks start from 10.255.255.0/24 and go backward 10.255.254.0/24, ..253.0/24, ... 
 MAX_NUM_MANAGEMENT_NETWORKS = 1023
+
 
 class LoopbackAllocator(object):
 
@@ -149,27 +151,41 @@ class PropertiesGenerator(object):
 		self.mgtNetAllocator = MgtNetAllocator()
 
 	def getLinksProperties(self, links):
+
+		# links can be a list only if a set of links belonging to the same switched network is given
+		# the case of multiple link in the same switched network has not been tested after the recent changes
+		
 		output = []
 		
+		# if we are allocating addresses for a set of links belonging to the same switched network
+		# we will allocate the network address only once
+		net_allocated = False 
+		hosts = []
 		for link in links:
 			if self.verbose == True:		
 				print "(%s,%s)" % (link[0], link[1])
 			lhs = link[0][:3]
 			rhs = link[1][:3]
 
-			# if a list of link is given as an input, why the net was choosen only once??
+			
 			if link[1][:3] == "mgm":
-				#if we are linking a node with the management node
+				#if we are linking a node with the management node (mgm is the rhs - right hand side)
 				#we allocate a management address
 				net = self.mgtNetAllocator.next_netAddress()
+				if self.verbose == True:		
+					print net
+				hosts = list(net.hosts())	
+				if self.verbose == True:			
+					print hosts
 			else:
-				net = self.netAllocator.next_netAddress()
-			if self.verbose == True:		
-				print net
-			hosts = list(net.hosts())	
-			if self.verbose == True:			
-				print hosts
-
+				if net_allocated == False:
+					net_allocated = True
+					net = self.netAllocator.next_netAddress()
+					if self.verbose == True:		
+						print net
+					hosts = list(net.hosts())	
+					if self.verbose == True:			
+						print hosts
 
 			a = re.search(r'cro\d+$', link[0])
 			b = re.search(r'peo\d+$', link[0])

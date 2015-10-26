@@ -61,7 +61,7 @@ def topo(topology):
 	if verbose:
 		print "*** Build Topology From Parsed File"
 	parser = TopoParser(topology, verbose = False)
-	ppsubnets = parser.getsubnets()
+	ppsubnets = parser.getsubnets()  #NB a submet could include multiple links if a legacy switch is used
 	vlls = parser.getVLLs()
 	pws = parser.getPWs()
 	vss = parser.getVSs()
