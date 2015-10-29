@@ -50,8 +50,8 @@ class MininetOSHI(Mininet):
 
 	temp_cfg = "temp.cfg"
 	VS_OPTION = '-o'
-	RYU_PATH = '' #'/home/conet/workspace/ryu/ryu/app/'
-	PROJECT_PATH = '' #'/home/conet/workspace/Dreamer-Mininet-Extensions/'
+	RYU_PATH = '/home/user/workspace/ryu/ryu/app/'
+	PROJECT_PATH = '/home/user/workspace/Dreamer-Mininet-Extensions/'
 
 	
 	def __init__(self, verbose=False):
