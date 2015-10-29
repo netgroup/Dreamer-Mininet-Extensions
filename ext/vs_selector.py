@@ -115,6 +115,10 @@ def o_selection(args):
 				nx_topology.add_edge(oshi, cer,	src_port="peo-eth%s" %(j), dst_port="cer-eth%s" %(j))
 				cer_to_data[cer]=pw
 				steiner_nodes.append(cer)
+
+		if len(steiner_nodes)==2:
+			u_selection(args)
+			return
 	
 		# Second Step (Building the topology of the shortest paths)
 		j = 0
