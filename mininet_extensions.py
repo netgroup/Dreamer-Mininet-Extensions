@@ -50,8 +50,8 @@ class MininetOSHI(Mininet):
 
 	temp_cfg = "temp.cfg"
 	VS_OPTION = '-o'
-	RYU_PATH = '' #'/home/user/workspace/ryu/ryu/app/'
-	PROJECT_PATH = '' #'/home/user/workspace/Dreamer-Mininet-Extensions/'
+	RYU_PATH = '/home/user/workspace/dreamer-ryu/ryu/app/'
+	PROJECT_PATH = '/home/user/workspace/Dreamer-Mininet-Extensions/'
 
 	
 	def __init__(self, verbose=False):
@@ -108,12 +108,24 @@ class MininetOSHI(Mininet):
 	def checkPATHs(self):
 
 		if MininetOSHI.RYU_PATH == "":
-			error("Error Set RYU_PATH In MininetOSHI\n")
+			error("Error Set RYU_PATH in mininet_extensions.py\n")
 			sys.exit(-2)
 
-		if MininetOSHI.PROJECT_PATH == "":
-			error("Error Set PROJECT_PATH In MininetOSHI\n")
+		if not os.path.exists(MininetOSHI.RYU_PATH):
+			error("Error : RYU_PATH in mininet_extensions.py points to a non existing folder\n")
 			sys.exit(-2)
+
+
+		if MininetOSHI.PROJECT_PATH == "":
+			error("Error Set PROJECT_PATH in mininet_extensions.py\n")
+			sys.exit(-2)
+
+
+		if not os.path.exists(MininetOSHI.PROJECT_PATH):
+			error("Error : PROJECT_PATH in mininet_extensions.py points to a non existing folder\n")
+			sys.exit(-2)
+
+
 
 	def manageOSHIproperties(self, properties, ctrl, name):
 		exist = properties.get("domain-oshi", None)
