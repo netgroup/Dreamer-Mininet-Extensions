@@ -46,7 +46,21 @@ from nodes import OSHI, Router, LegacyL2Switch, IPHost, InBandController, VSF, V
 from utility import fixIntf, unmountAll, VTEPAllocator, VTEP
 from coexistence_mechanisms import *
 
+#choose a log type: INFO uses info() to output on system logger
+logtype = "INFO"
+#logtype = "PRINT"
+
+
+def mylog(mystring):
+	if logtype == "PRINT":
+		print mystring
+	if logtype == "INFO":
+		info(mystring)
+
+
+
 class MininetOSHI(Mininet):
+
 
 	temp_cfg = "temp.cfg"
 	VS_OPTION = '-o'
@@ -99,7 +113,7 @@ class MininetOSHI(Mininet):
 
 		root = Node( 'root', inNamespace=False )
 		root.cmd('/etc/init.d/network-manager stop')
-		info("*** Stop Network Manager\n")
+		mylog("*** Stop Network Manager\n")
 
 		self.cluster_to_ctrl = defaultdict(list)
 		self.cluster_to_nodes = defaultdict(list)
@@ -236,7 +250,8 @@ class MininetOSHI(Mininet):
 	
 	# Add Link to MininetOSHI
 	def addLink(self, lhs, rhs, properties):
-		info("*** Connect %s to %s\n" %(lhs.name, rhs.name))
+		mylog("*** Connecting %s to %s\n" %(lhs.name, rhs.name))
+		
 		link = Mininet.addLink(self, lhs, rhs)
 
 		data_lhs = { 'intfname':link.intf1.name, 'ip':properties.ipLHS, 'ingrtype':properties.ingr.type, 'ingrdata':properties.ingr.data, 'net':{ 'net':properties.net.net, 'netbit':properties.net.netbit, 'cost':properties.net.costLHS, 'hello':properties.net.helloLHS, 'area':properties.net.area}}
@@ -278,7 +293,7 @@ class MininetOSHI(Mininet):
 		return link
 
 	def addVLL(self, lhs_cer, rhs_cer, properties):
-		info("*** Connect %s to %s through Vll\n" %(lhs_cer.name, rhs_cer.name))		
+		mylog("*** Connect %s to %s through Vll\n" %(lhs_cer.name, rhs_cer.name))		
 
 		lhs_peo = self.node_to_node[lhs_cer.name]
 		rhs_peo = self.node_to_node[rhs_cer.name]
@@ -335,7 +350,7 @@ class MininetOSHI(Mininet):
 		self.vlls.append({'lhs_dpid':lhs_dpid, 'rhs_dpid':rhs_dpid, 'lhs_intf':lhs_intf, 'rhs_intf':rhs_intf, 'lhs_label':'0', 'rhs_label':'0'})
 
 	def addPW(self, lhs_cer, rhs_cer, properties):
-		info("*** Connect %s to %s through Pw\n" %(lhs_cer.name, rhs_cer.name))		
+		mylog("*** Connect %s to %s through Pw\n" %(lhs_cer.name, rhs_cer.name))		
 
 		lhs_peo = self.node_to_node[lhs_cer.name]
 		rhs_peo = self.node_to_node[rhs_cer.name]
@@ -411,7 +426,7 @@ class MininetOSHI(Mininet):
 
 	"""
 	def addVS(self, endnodes = [], properties = None):
-		info("*** Connect %s through VS\n" % ' '.join(endnode.name for endnode in endnodes))
+		mylog("*** Connect %s through VS\n" % ' '.join(endnode.name for endnode in endnodes))
 
 		self.is_vs = True		
 
@@ -461,7 +476,7 @@ class MininetOSHI(Mininet):
 
 	
 	def addVS(self, endnodes = [], properties = None):
-		info("*** Connect %s through VS\n" % ' '.join(endnode.name for endnode in endnodes))
+		mylog("*** Connect %s through VS\n" % ' '.join(endnode.name for endnode in endnodes))
 
 		i = 0
 		for i in range(0, len(endnodes)-1):
@@ -558,23 +573,23 @@ class MininetOSHI(Mininet):
 		"Configure a set of hosts."
 
 		for host in self.hosts:
-			info( host.name + ' ' )
+			mylog( host.name + ' ' )
 			host.cmd( 'ifconfig lo up' )
-		info( '\n' )
+		mylog( '\n' )
 
 	def fixEnvironment(self):
 		
-		info("*** Fix environment\n")
+		mylog("*** Fix environment\n")
 
 		for node in self.nodes_in_rn:
 			fixIntf(node)
 		root = Node( 'root', inNamespace=False )
 		
-		info("*** Stop unwanted traffic\n")
+		mylog("*** Stop unwanted traffic\n")
 		root.cmd('stop avahi-daemon')
 		#root.cmd('killall dhclient')
 
-		info("*** Kill old processes\n")
+		mylog("*** Kill old processes\n")
 		root.cmd('killall -r zebra')
 		root.cmd('killall -r ospfd')
 		root.cmd('killall sshd')
@@ -583,7 +598,7 @@ class MininetOSHI(Mininet):
 	  	line1 = 'VTYSH_PAGER=more\n'
 	  	config = open( cfile ).read()
 	  	if ( line1 ) not in config:
-			info( '*** Adding %s to %s\n' %(line1.strip(), 'to', cfile))
+			mylog( '*** Adding %s to %s\n' %(line1.strip(), 'to', cfile))
 			with open( cfile, 'a' ) as f:
 		  		f.write( line1 )
 		  	f.close();
@@ -592,7 +607,7 @@ class MininetOSHI(Mininet):
 			os.remove(self.temp_cfg)
 		
 		#root.cmd('/etc/init.d/network-manager restart')
-		#info("*** Stop Network Manager\n")
+		#mylog("*** Stop Network Manager\n")
 		#time.sleep(10)
 
 	def start(self):
@@ -606,7 +621,7 @@ class MininetOSHI(Mininet):
 		ip_to_mac_file.write(json.dumps(self.ip_to_mac, sort_keys=True, indent=4))
 		ip_to_mac_file.close()
 
-		info( '*** Starting %s cr oshis\n' % len(self.cr_oshis) )
+		mylog( '*** Starting %s cr oshis\n' % len(self.cr_oshis) )
 		for cr_oshi in self.cr_oshis:
 			cluster = self.nodes_to_cluster[cr_oshi.name]
 			ctrls_names = []
@@ -619,8 +634,8 @@ class MininetOSHI(Mininet):
 		coexFactory = CoexFactory()
 		coex = coexFactory.getCoex(self.coex['coex_type'], self.coex['coex_data'], [], [], "", OSHI.OF_V)		
 		
-		info( '\n' )
-		info( '*** Starting %s pe oshis\n' % len(self.pe_oshis) )
+		mylog( '\n' )
+		mylog( '*** Starting %s pe oshis\n' % len(self.pe_oshis) )
 		for pe_oshi in self.pe_oshis:
 			cluster = self.nodes_to_cluster[pe_oshi.name]
 			ctrls_names = self.cluster_to_ctrl[cluster]
@@ -628,22 +643,22 @@ class MininetOSHI(Mininet):
 			for ctrl_name in ctrls_names:
 				ctrls.append(self.getNodeByName(ctrl_name))
 			pe_oshi.start(ctrls, self.node_to_data[pe_oshi.name],  self.coex)
-		info( '\n' )
-		info( '*** Starting %s vsfs\n' % len(self.vsfs) )
+		mylog( '\n' )
+		mylog( '*** Starting %s vsfs\n' % len(self.vsfs) )
 		for vsf in self.vsfs:
 			vsf.start(self.node_to_pw_data[vsf.name])		
-		info( '\n' )
-		info( '*** Starting %s in band controllers\n' % len(self.ctrls) )
+		mylog( '\n' )
+		mylog( '*** Starting %s in band controllers\n' % len(self.ctrls) )
 		for controller in self.ctrls:
 			controller.start(self.node_to_default_via[controller.name])
-		info( '\n' )
-		info( '*** Starting %s ce routers\n' % len(self.ce_routers) )
+		mylog( '\n' )
+		mylog( '*** Starting %s ce routers\n' % len(self.ce_routers) )
 		for ce_router in self.ce_routers:
 			ce_router.start(self.node_to_default_via[ce_router.name])
-		info( '\n' )
-		info( '*** Starting management server\n')
+		mylog( '\n' )
+		mylog( '*** Starting management server\n')
 		self.mgmt.start(self.node_to_default_via[self.mgmt.name])
-		info( '\n' )
+		mylog( '\n' )
 
 		vscfg_file = open('vs_selector.cfg', 'w')
 		vscfg = {}
@@ -664,37 +679,37 @@ class MininetOSHI(Mininet):
 			if 'DISPLAY' not in os.environ:
 				error( "Error starting terms: Cannot connect to display\n" )
 				return
-			info( "*** Running ctrls terms on %s\n" % os.environ[ 'DISPLAY' ] )
+			mylog( "*** Running ctrls terms on %s\n" % os.environ[ 'DISPLAY' ] )
 			cleanUpScreens()
 			self.terms += makeTerms( self.ctrls, 'controller' )
 			self.terms += makeTerms( self.ctrls, 'controller2' )
 
-			info("*** Waiting for the creation of the file %s" % self.temp_cfg)
-			info("\n")
+			mylog("*** Waiting for the creation of the file %s" % self.temp_cfg)
+			mylog("\n")
 			"""
 
-			info("*** Starting VS selection\n")
+			mylog("*** Starting VS selection\n")
 			shutil.copyfile("vs_selector.cfg", "ext/vs_selector.cfg")
 			controller = self.ctrls[0]
 			
-			info("*** Launch RYU Controller\n")
+			mylog("*** Launch RYU Controller\n")
 			controller.cmd('cd', MininetOSHI.RYU_PATH)
 			controller.cmd('ryu-manager', '--observe-links', 'rest_topology.py', 'ofctl_rest.py', "&")
 			controller.cmd('cd', "%s/ext/" % MininetOSHI.PROJECT_PATH)
 
-			info("*** Launch VS Selector\n")
+			mylog("*** Launch VS Selector\n")
 			while not os.path.exists(self.temp_cfg):
 				controller.cmd('./vs_selector.py','--controller localhost:8080', MininetOSHI.VS_OPTION)
 				time.sleep(5)
 			root = Node( 'root', inNamespace=False )
-			info("*** Kill all processes started\n")
+			mylog("*** Kill all processes started\n")
 			root.cmd('killall ryu-manager')
 			self.configureVS()
 			
-			info( '*** Starting and configuring %s vss\n' % len(self.vss) )
+			mylog( '*** Starting and configuring %s vss\n' % len(self.vss) )
 			for vs in self.vss:
 				vs.start(self.node_to_pw_data[vs.name])		
-			info( '\n' )
+			mylog( '\n' )
 
 		for cr_oshi in self.cr_oshis:
 			cr_oshi.start_pw(coex.tableIP, self.node_to_pw_data[cr_oshi.name])		
@@ -711,13 +726,14 @@ class MininetOSHI(Mininet):
 		vllcfg_file.write(json.dumps(vllcfg, sort_keys=True, indent=4))
 		vllcfg_file.close()
 
-		info("*** Nodes are running sshd at the following addresses\n")
+		mylog("*** Nodes are running sshd at the following addresses\n")
+
 		path = './ip_node.json'
 		if os.path.exists(path):
 			os.remove(path)
 		for host in self.hosts:
 			if "vs" not in host.name: 
-				info("*** %s is running sshd at the following address %s\n" %(host.name, host.IP()))
+				mylog("*** %s is running sshd at the following address %s\n" %(host.name, host.IP()))
 				self.store_ip_node(host.name,host.IP())
 
 
@@ -735,13 +751,13 @@ class MininetOSHI(Mininet):
 			self.stop()
 			exit(-1)
 
-		info("#######################################\n")
+		mylog("#######################################\n")
 		for vs in cfg['vss']:
 
 			cid = vs['cid']
 			id_ = vs['id']
 
-			info("The VSS %s is composed by these PWs:" % id_)
+			mylog("The VSS %s is composed by these PWs:" % id_)
 
 			for pw in vs['pws']:
 
@@ -784,10 +800,10 @@ class MininetOSHI(Mininet):
 
 				rhs_vtep = VTEP(pw['rhs_gre_ip'], pw['rhs_gre_mac'].upper().replace(":",""))
 
-				info("(%s,%s)" %(lhs_intf,vslink2.intf1.name))
+				mylog("(%s,%s)" %(lhs_intf,vslink2.intf1.name))
 
 				self.addLineToPWCFG(lhs_id, lhs_intf, lhs_vtep, rhs_peo.dpid, vslink2.intf1.name, rhs_vtep)
-			info("\n#######################################\n")		
+			mylog("\n#######################################\n")		
 
 	def getVSByIDandPEO(self, id_, peo):
 		key = "%s-%s" %(id_,peo)
@@ -802,22 +818,22 @@ class MininetOSHI(Mininet):
 
 	def cleanEnvironment(self):
 		
-		info("*** Clean environment\n")
+		mylog("*** Clean environment\n")
 		subprocess.call(["sudo", "mn", "-c"], stdout=None, stderr=None)
 		
 		root = Node( 'root', inNamespace=False )
 		
-		info("*** Restart network-manager\n")
+		mylog("*** Restart network-manager\n")
 		root.cmd('/etc/init.d/network-manager restart')
 		
-		info("*** Kill all processes started\n")
+		mylog("*** Kill all processes started\n")
 		root.cmd('killall ovsdb-server')
 		root.cmd('killall ovs-vswitchd')
 		root.cmd('killall -r zebra')
 		root.cmd('killall -r ospfd')
 		root.cmd('killall sshd')
 
-		info("*** Restart Avahi, Open vSwitch, and sshd\n")	
+		mylog("*** Restart Avahi, Open vSwitch, and sshd\n")	
 		root.cmd('/etc/init.d/avahi-daemon start')
 
 		
@@ -825,24 +841,24 @@ class MininetOSHI(Mininet):
 
 		root.cmd('/etc/init.d/ssh start')
 
-		info('*** Unmounting host bind mounts\n')
+		mylog('*** Unmounting host bind mounts\n')
 		unmountAll()
 
 	def stop(self):
 
 		if self.terms:
-			info( '*** Stopping %i terms\n' % len( self.terms ) )
+			mylog( '*** Stopping %i terms\n' % len( self.terms ) )
 			self.stopXterms()
 
-		info( '*** Stopping %i hosts\n' % len( self.hosts ) )
+		mylog( '*** Stopping %i hosts\n' % len( self.hosts ) )
 		for host in self.hosts:
-			info( host.name + ' ' )
+			mylog( host.name + ' ' )
 			host.terminate()
 		
-		info( '\n' )
+		mylog( '\n' )
 		self.cleanEnvironment()
 
-		info( '*** Done\n' )
+		mylog( '*** Done\n' )
 
 	def checkLLfeasibility(self, lhs, rhs):
 
@@ -905,3 +921,5 @@ class MininetOSHI(Mininet):
 		ipNode = open('./ip_node.json','a+')
 		ipNode.write(stro+"\n")
 		ipNode.close()
+
+

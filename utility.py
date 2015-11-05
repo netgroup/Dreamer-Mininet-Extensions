@@ -35,6 +35,9 @@ from ipaddress import *
 import sys
 import re
 
+#management networks start from 10.255.255.0/24 and go backward 10.255.254.0/24, ..253.0/24, ... 
+MAX_NUM_MANAGEMENT_NETWORKS = 1023
+
 
 class LoopbackAllocator(object):
 
@@ -75,6 +78,29 @@ class NetAllocator(object):
 				print "Error IP Net SoldOut"
 				sys.exit(-2)
 		return net
+
+class MgtNetAllocator(object):
+
+	bits = 24
+	allocated = 0
+
+	def __init__(self):		
+		print "*** doing nothing"
+	
+	def next_netAddress(self):
+		if self.allocated == MAX_NUM_MANAGEMENT_NETWORKS:
+			print "Error : Management IP Networks soldout"
+			sys.exit(-2)
+
+		(high_part, low_part) = divmod(self.allocated, 256)
+		net3 = 255 - low_part
+		net2 = 255 - high_part
+		self.allocated = self.allocated + 1
+		ipnet = ("10."+str(net2)+"."+str(net3)+".0/255.255.255.0").decode('unicode-escape')
+		print ipnet
+		return (IPv4Network(ipnet))
+
+
 
 class VTEPAllocator(object):
 
@@ -122,21 +148,45 @@ class PropertiesGenerator(object):
 		self.verbose = verbose
 		self.netAllocator = NetAllocator()
 		self.loopbackAllocator = LoopbackAllocator()
+		self.mgtNetAllocator = MgtNetAllocator()
 
 	def getLinksProperties(self, links):
+
+		# links can be a list only if a set of links belonging to the same switched network is given
+		# the case of multiple link in the same switched network has not been tested after the recent changes
+		
 		output = []
-		net = self.netAllocator.next_netAddress()
-		if self.verbose == True:		
-			print net
-		hosts = list(net.hosts())	
-		if self.verbose == True:			
-			print hosts
+		
+		# if we are allocating addresses for a set of links belonging to the same switched network
+		# we will allocate the network address only once
+		net_allocated = False 
+		hosts = []
 		for link in links:
 			if self.verbose == True:		
 				print "(%s,%s)" % (link[0], link[1])
 			lhs = link[0][:3]
 			rhs = link[1][:3]
+
 			
+			if link[1][:3] == "mgm":
+				#if we are linking a node with the management node (mgm is the rhs - right hand side)
+				#we allocate a management address
+				net = self.mgtNetAllocator.next_netAddress()
+				if self.verbose == True:		
+					print net
+				hosts = list(net.hosts())	
+				if self.verbose == True:			
+					print hosts
+			else:
+				if net_allocated == False:
+					net_allocated = True
+					net = self.netAllocator.next_netAddress()
+					if self.verbose == True:		
+						print net
+					hosts = list(net.hosts())	
+					if self.verbose == True:			
+						print hosts
+
 			a = re.search(r'cro\d+$', link[0])
 			b = re.search(r'peo\d+$', link[0])
 			c = re.search(r'ctr\d+$', link[0])

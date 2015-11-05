@@ -36,6 +36,7 @@ from coexistence_mechanisms import *
 from ingress_classifications import *
 
 from mininet.cli import CLI
+from mininet.log import lg, info, error
 
 parser_path = "../Dreamer-Topology-Parser-and-Validator/"
 if parser_path == "":
@@ -50,6 +51,14 @@ if not os.path.exists(parser_path):
 sys.path.append(parser_path)
 from topo_parser import TopoParser
 
+# if SINGLE_CONNECTION is True, one of the Core Router is choosen as gateway for the "management"
+# ssh connections from the hosting environment to the mininet VMs
+# if SINGLE_CONNECTION is False, each Mininet VM has an additional interface directly connected to
+# an interface of the hosting environment and ssh is performed "out of band"
+
+#SINGLE_CONNECTION = True
+SINGLE_CONNECTION = False
+
 # XXX Build Topology From topo.json generated through TopologyDesigner and create Configuration File for VLL pusher	
 def topo(topology):
 
@@ -57,7 +66,7 @@ def topo(topology):
 	if verbose:
 		print "*** Build Topology From Parsed File"
 	parser = TopoParser(topology, verbose = False)
-	ppsubnets = parser.getsubnets()
+	ppsubnets = parser.getsubnets()  #NB a submet could include multiple links if a legacy switch is used
 	vlls = parser.getVLLs()
 	pws = parser.getPWs()
 	vss = parser.getVSs()
@@ -108,6 +117,12 @@ def topo(topology):
 	set_cers = parser.cers
 	set_ctrls = parser.ctrls
 
+	set_all_nodes = []
+	set_all_nodes.extend(set_cr_oshis)
+	set_all_nodes.extend(set_pe_oshis)
+	set_all_nodes.extend(set_cers)
+	set_all_nodes.extend(set_ctrls)
+
 	net = MininetOSHI(verbose)
 
 	if verbose:
@@ -131,23 +146,13 @@ def topo(topology):
 	net.addCoexistenceMechanism("COEXH", 0)
 
 	if verbose:
-		print "*** Build CONTROLLER"
+		print "*** Build CONTROLLERS"
 	i = 0
 	for ctrl in set_ctrls:
 		net.addController(parser.ctrls_properties[i], ctrl)
 		if verbose:
 			print "*** %s - %s" %(ctrl, parser.ctrls_properties[i])	
 		i = i + 1
-
-	if verbose:
-		print "*** Build Management"
-	mgmt = net.addManagement(name="mgm1")
-	croshi = net.getNodeByName(croshi)	
-	
-	linkproperties = generator.getLinksProperties([(croshi.name, mgmt.name)])
-	net.addLink(croshi, mgmt, linkproperties[0])
-	if verbose:			
-		print "*** Connect", mgmt.name, "To", croshi.name, "-", linkproperties[0]
 
 	if verbose:
 		print "*** Build CERS"
@@ -157,6 +162,28 @@ def topo(topology):
 		if verbose:
 			print "*** %s - %s" %(cer, parser.cers_properties[i])
 		i = i + 1
+
+	if verbose:
+		print "*** Build Management"
+	mgmt = net.addManagement(name="mgm1")
+
+	if SINGLE_CONNECTION:
+		croshi = net.getNodeByName(croshi)	
+		
+		linkproperties = generator.getLinksProperties([(croshi.name, mgmt.name)])
+		net.addLink(croshi, mgmt, linkproperties[0])
+		if verbose:			
+			print "*** MANAGEMENT CONNECTION: ", mgmt.name, "To", croshi.name, "-", linkproperties[0]
+	else:
+		i = 0	
+		for a_node in set_all_nodes:
+			a_node = net.getNodeByName(a_node)	
+			linkproperties = generator.getLinksProperties([(a_node.name, mgmt.name)])
+			net.addLink(a_node, mgmt, linkproperties[0])
+			if verbose:			
+				print "*** MANAGEMENT CONNECTION: ", a_node.name, "To", mgmt.name, "-", linkproperties[0]
+			i = i + 1
+
 
 	if verbose:	
 		print "*** Create Networks Point To Point"

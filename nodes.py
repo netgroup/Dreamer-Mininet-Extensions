@@ -472,16 +472,25 @@ class OSHI(HostWithPrivateDirs):
 		ospfd_conf.write("router ospf\n")
 		ospfd_conf.write("network %s/%s area %s\n" %(net, netbit, area))
 
+		#riconoscere qui che una rete verso mgm1 non deve essere aggiunta
+
 		net_added = []
 
 		for intf in intfs_to_data:
 
 			net = intf['net']['net']
 			if net not in net_added and net != '0.0.0.0':
-				net_added.append(net)
-				area = intf['net']['area']
-				netbit = intf['net']['netbit']
-				ospfd_conf.write("network %s/%s area %s\n" %(net, netbit, area))
+				# if a network is the management connection with the host, it does not add it to ospf
+				addr_bytes = net.split('.') 
+				#info("addr_bytes = ", addr_bytes [0], addr_bytes[1], addr_bytes [2], addr_bytes[3])
+				low_part = 255 - int(addr_bytes[2])
+				high_part = 255 - int(addr_bytes[1])
+				net_num = high_part * 256 + low_part
+				if net_num > 1023 : #MAX_NUM_MANAGEMENT_NETWORKS
+					net_added.append(net)
+					area = intf['net']['area']
+					netbit = intf['net']['netbit']
+					ospfd_conf.write("network %s/%s area %s\n" %(net, netbit, area))
 
 		ospfd_conf.close()
 		zebra_conf.close()
