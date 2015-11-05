@@ -57,3 +57,5 @@ cemetery
 *.old
 *.orig
 *.cfg
+
+ip_node.json
