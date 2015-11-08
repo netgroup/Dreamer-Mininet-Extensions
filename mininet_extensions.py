@@ -108,6 +108,8 @@ class MininetOSHI(Mininet):
 		self.id_to_node = {}
 		self.ip_to_mac = {}
 
+		self.overall_info = {}
+
 		
 		self.mgmt = None
 
@@ -139,6 +141,11 @@ class MininetOSHI(Mininet):
 
 
 	def manageOSHIproperties(self, properties, ctrl, name):
+		"""manage OSHI properties
+
+		ctrl : controller
+		name : name of the node
+		"""
 		exist = properties.get("domain-oshi", None)
 		if not exist:
 			error("Error domain-oshi properties cannot be found\n")
@@ -164,7 +171,11 @@ class MininetOSHI(Mininet):
 
 	
 	def addOSHI(self, nodeproperties, ctrl, CR, name=None):
-		"""Creates and Adds a new OSHI node"""
+		"""Creates and Adds a new OSHI node
+
+		ctrl : controller
+		CR : True if CR, false otherwise
+		"""
 
 		loopback = nodeproperties['loopback']
 		if not loopback:
@@ -624,7 +635,7 @@ class MininetOSHI(Mininet):
 		if not self.built:
 			self.build()
 
-		ip_to_mac_file = open('/tmp/ip_to_mac.cfg', 'w')
+		ip_to_mac_file = open('/tmp/ip_to_mac.cfg', 'w') #TODO it does not work in multiple users environment
 		ip_to_mac_file.write(json.dumps(self.ip_to_mac, sort_keys=True, indent=4))
 		ip_to_mac_file.close()
 
