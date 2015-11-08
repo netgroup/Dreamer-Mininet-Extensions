@@ -59,15 +59,24 @@ def mylog(mystring):
 """
 Example of overall_info json file
 {
-  "cro1": {
-    "dpid": "00:01:02:03:04:05",
-    "loopback_IP": "176.16.0.1",
-    "mgt_IP": "10.255.0.1",
+  "peo6": {
+    "mgt_IP": "10.255.252.1",
+    "loopback_IP": "172.16.0.4",
+    "dpid": "00000000AC100004",
     "interfaces": {
-      "eth0": {
-        "ip": "10.0.10.2/24",
-        "mac": 
-        "peers": ["peo2"]
+      "peo6-eth1": {
+        "ip": "10.0.2.1/24",
+        "mac": "02:9e:fb:26:73:c4",
+        "peers": [
+          "cro3"
+        ]
+      },
+      "peo6-eth0": {
+        "ip": "10.255.252.1/24",
+        "mac": "8a:67:81:17:44:8e",
+        "peers": [
+          "mgm1"
+        ]
       }
     }
   }
@@ -332,7 +341,7 @@ class MininetOSHI(Mininet):
             # adding information in overall_info
             self.overall_info[lhs.name]['interfaces'][link.intf1.name]={}
             self.overall_info[lhs.name]['interfaces'][link.intf1.name]['ip']=ip_string
-            #self.overall_info[lhs.name]['interfaces'][link.intf1.name]['mac']= ':'.join(s.encode('hex') for s in lhs.mac.decode('hex'))
+            self.overall_info[lhs.name]['interfaces'][link.intf1.name]['mac']= link.intf1.MAC()
             self.overall_info[lhs.name]['interfaces'][link.intf1.name]['peers']=[]
             self.overall_info[lhs.name]['interfaces'][link.intf1.name]['peers'].append(rhs.name)
 
@@ -342,7 +351,7 @@ class MininetOSHI(Mininet):
             # adding information in overall_info
             self.overall_info[rhs.name]['interfaces'][link.intf2.name]={}
             self.overall_info[rhs.name]['interfaces'][link.intf2.name]['ip']=ip_string
-            #self.overall_info[rhs.name]['interfaces'][link.intf2.name]['mac']= ':'.join(s.encode('hex') for s in rhs.mac.decode('hex'))
+            self.overall_info[rhs.name]['interfaces'][link.intf2.name]['mac']= link.intf2.MAC()
             self.overall_info[rhs.name]['interfaces'][link.intf2.name]['peers']=[]
             self.overall_info[rhs.name]['interfaces'][link.intf2.name]['peers'].append(lhs.name)
 
@@ -816,8 +825,9 @@ class MininetOSHI(Mininet):
         for host in self.hosts:
             if "vs" not in host.name: 
                 mylog("*** %s is running sshd at the following address %s\n" %(host.name, host.IP()))
+                self.overall_info[host.name]['mgt_IP']=host.IP()
 
-        self.overall_info[host.name]['mgt_IP']=host.IP()
+
         self.store_overall_info()
 
         #end of start() method
