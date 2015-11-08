@@ -60,7 +60,7 @@ def mylog(mystring):
 
 
 class MininetOSHI(Mininet):
-
+	"""Parses a T3D topology (for the OSHI model) and generates the Mininet deployment"""
 
 	temp_cfg = "temp.cfg"
 	VS_OPTION = '-o'
@@ -129,16 +129,13 @@ class MininetOSHI(Mininet):
 			error("Error : RYU_PATH in mininet_extensions.py points to a non existing folder\n")
 			sys.exit(-2)
 
-
 		if MininetOSHI.PROJECT_PATH == "":
 			error("Error Set PROJECT_PATH in mininet_extensions.py\n")
 			sys.exit(-2)
 
-
 		if not os.path.exists(MininetOSHI.PROJECT_PATH):
 			error("Error : PROJECT_PATH in mininet_extensions.py points to a non existing folder\n")
 			sys.exit(-2)
-
 
 
 	def manageOSHIproperties(self, properties, ctrl, name):
@@ -164,9 +161,11 @@ class MininetOSHI(Mininet):
 			
 	def getNodeById(self, id_):
 		return self.id_to_node[id_]
+
 	
-	# Create and Add a new OSHI
 	def addOSHI(self, nodeproperties, ctrl, CR, name=None):
+		"""Creates and Adds a new OSHI node"""
+
 		loopback = nodeproperties['loopback']
 		if not loopback:
 			error("ERROR loopback not provided\n")
@@ -176,18 +175,17 @@ class MininetOSHI(Mininet):
 		self.id_to_node[oshi.dpid]=oshi
 		return oshi
 	
-	# Create and Add a new OSHI insert
-	# it in the Core OSHI set
 	def addCrOSHI(self, nodeproperties, name=None):
+		"""	Creates and Adds a new OSHI CR (Core Router)"""
+
 		if not name:
 			name = self.newCrName()
 		oshi = self.addOSHI(nodeproperties, False, True, name)
 		self.cr_oshis.append(oshi)
 		return oshi
 		
-	# Create and Add a new OSHI insert it
-	# in the Provider Edge OSHI set
 	def addPeOSHI(self, nodeproperties, name=None):
+		"""	Creates and Adds a new OSHI PE (Provider Edge)"""
 		if not name:
 			name = self.newPeName()
 		oshi = self.addOSHI(nodeproperties, False, False, name)
@@ -197,6 +195,7 @@ class MininetOSHI(Mininet):
 	
 	# Create and Add a new Remote Controller
 	def addController(self, nodeproperties, name=None, ip="127.0.0.1" ,tcp_port=6633):
+		"""	Creates and Adds a Controller"""
 		if not name:
 			name = self.newCtrlName()
 		tcp_port = int(nodeproperties['tcp_port'])
@@ -205,9 +204,12 @@ class MininetOSHI(Mininet):
 		self.ctrls.append(ctrl)
 		return ctrl
 
-	# Create and Add a new Customer Edge Router.
-	# In our case it is a simple host
 	def addCeRouter(self, cid, nodeproperties, name=None):
+		"""	Creates and Adds a new OSHI CER (Customer Edge Router)
+
+		A CER is like a simple host for us
+		"""
+
 		if not name:
 			name = self.newCeName()
 			
@@ -225,8 +227,8 @@ class MininetOSHI(Mininet):
 
 		return ce_router
 
-	# Create and Add a new Remote Management
 	def addManagement(self, name=None):
+		"""Adds the node for the management connection between the Host and all the Mininet VMs"""
 		if not name:
 			name = self.newMgmtName()
 		mgmt = Mininet.addHost(self, name, cls=IPHost, inNamespace=False)
@@ -235,6 +237,10 @@ class MininetOSHI(Mininet):
 		return mgmt
 
 	def addCoexistenceMechanism(self, coex_type, coex_data):
+		"""defines the coexistence mechanism between IP and SDN traffic
+
+		coex_types=["COEXA", "COEXB", "COEXH"] see coexistence_mechanisms.py
+		"""
 
 		if coex_type is None:
 			error("ERROR Coex Type is None\n")
@@ -248,8 +254,9 @@ class MininetOSHI(Mininet):
 		self.coex['coex_data']=coex_data
 
 	
-	# Add Link to MininetOSHI
 	def addLink(self, lhs, rhs, properties):
+		"""Adds a Link to OSHI Mininet """
+	
 		mylog("*** Connecting %s to %s\n" %(lhs.name, rhs.name))
 		
 		link = Mininet.addLink(self, lhs, rhs)
