@@ -91,7 +91,7 @@ class MininetOSHI(Mininet):
     VS_OPTION = '-o'
     RYU_PATH = '/home/user/workspace/dreamer-ryu/ryu/app/'
     PROJECT_PATH = '/home/user/workspace/Dreamer-Mininet-Extensions/'
-    OVERALL_INFO_FILE = '/tmp/overall_info.json'
+    #OVERALL_INFO_FILE = '/tmp/overall_info.json'
 
     
     def __init__(self, verbose=False):
@@ -704,7 +704,11 @@ class MininetOSHI(Mininet):
         #time.sleep(10)
 
     def start(self):
-        """Start mininet emulation"""
+        """Start mininet emulation
+
+        returns the overall_info with all the nodes and link information
+
+        """
 
         self.fixEnvironment()
 
@@ -827,20 +831,20 @@ class MininetOSHI(Mininet):
                 mylog("*** %s is running sshd at the following address %s\n" %(host.name, host.IP()))
                 self.overall_info[host.name]['mgt_IP']=host.IP()
 
-
-        self.store_overall_info()
+        return (self.overall_info)
+        #self.store_overall_info()
 
         #end of start() method
 
 
-    def store_overall_info(self):
+    # def store_overall_info(self):
 
-        stro = json.dumps(self.overall_info)
-        if os.path.exists(self.OVERALL_INFO_FILE):
-            os.remove(self.OVERALL_INFO_FILE)
-        overall_file = open(self.OVERALL_INFO_FILE,'a+')
-        overall_file.write(stro+"\n")
-        overall_file.close()
+    #     stro = json.dumps(self.overall_info)
+    #     if os.path.exists(self.OVERALL_INFO_FILE):
+    #         os.remove(self.OVERALL_INFO_FILE)
+    #     overall_file = open(self.OVERALL_INFO_FILE,'a+')
+    #     overall_file.write(stro+"\n")
+    #     overall_file.close()
 
 
     def configureVS(self):
