@@ -75,6 +75,7 @@ def topo(topology):
     if verbose:
         print "*** Build Topology From Parsed File"
         print "*** Topology file : ", topology 
+        print "*** NodeInfo file: ", overall_info_file
     parser = TopoParser(topology, verbose = False)
     ppsubnets = parser.getsubnets()
     #NB a submet could include multiple links if a legacy switch is used
@@ -268,6 +269,7 @@ def parse_cmd_line():
             parser.print_help()
             sys.exit(1)
     topo_data = args.topoInfo  
+    global overall_info_file
     overall_info_file =  args.nodeInfo
     return (topo_data)
 
