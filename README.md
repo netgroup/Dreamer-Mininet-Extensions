@@ -31,7 +31,7 @@ Mininet Extensions Dependencies
 
 2) ipaddress (pip)
 
-3) OSHI dependecies, see setup.sh of the [Dreamer-Setup-Scripts](https://github.com/netgroup/Dreamer-Setup-Scripts) project
+3) OSHI dependecies, see setup.sh of the [Dreamer-Management-Scripts](https://github.com/netgroup/Dreamer-Management-Scripts) project
 
 3.1) Open vSwitch 2.390 for MPLS-VLL and MPLS-PW [Open vSwitch](https://github.com/openvswitch/ovs) (git)
 
