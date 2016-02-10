@@ -46,9 +46,11 @@ from nodes import OSHI, Router, LegacyL2Switch, IPHost, InBandController, VSF, V
 from utility import fixIntf, unmountAll, VTEPAllocator, VTEP
 from coexistence_mechanisms import *
 
-#choose a log type: INFO uses info() to output on system logger
+# choose a log type:
+# INFO uses info() to output on system logger
+# PRINT uses print statements
 logtype = "INFO"
-#logtype = "PRINT"
+
 
 def mylog(mystring):
     if logtype == "PRINT":
