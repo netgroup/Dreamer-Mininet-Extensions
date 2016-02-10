@@ -93,9 +93,7 @@ class MininetOSHI(Mininet):
     VS_OPTION = '-o'
     RYU_PATH = '/home/user/workspace/dreamer-ryu/ryu/app/'
     PROJECT_PATH = '/home/user/workspace/Dreamer-Mininet-Extensions/'
-    #OVERALL_INFO_FILE = '/tmp/overall_info.json'
 
-    
     def __init__(self, verbose=False):
 
         self.checkPATHs()
@@ -112,7 +110,6 @@ class MininetOSHI(Mininet):
         self.node_to_default_via = {}
         self.coex = {}
         
-
         self.verbose = verbose
         lg.setLogLevel('info')
 
@@ -192,11 +189,11 @@ class MininetOSHI(Mininet):
             self.cluster_to_nodes[cluster_id].append(name)
             self.nodes_to_cluster[name] = cluster_id
 
-            
+
     def getNodeById(self, id_):
         return self.id_to_node[id_]
 
-    
+
     def addOSHI(self, nodeproperties, ctrl, CR, name=None):
         """Creates and Adds a new OSHI node
 
@@ -212,10 +209,10 @@ class MininetOSHI(Mininet):
             sys.exit(-2)
         self.manageOSHIproperties(nodeproperties, ctrl, name)
         oshi = Mininet.addHost(self, name, cls=OSHI, loopback=loopback, CR=CR, cluster_id=self.nodes_to_cluster[name])
-        self.id_to_node[oshi.dpid]=oshi
+        self.id_to_node[oshi.dpid] = oshi
 
         # adding information in overall_info
-        self.overall_info[name]={}
+        self.overall_info[name] = {}
         self.overall_info[name]['dpid']=oshi.dpid
         self.overall_info[name]['loopback_IP']=loopback
         self.overall_info[name]['interfaces']={}
@@ -239,7 +236,6 @@ class MininetOSHI(Mininet):
         self.pe_oshis.append(oshi)
         return oshi
 
-    
     # Create and Add a new Remote Controller
     def addController(self, nodeproperties, name=None, ip="127.0.0.1" ,tcp_port=6633):
         """ Creates and Adds a Controller"""
@@ -833,21 +829,7 @@ class MininetOSHI(Mininet):
                 mylog("*** %s is running sshd at the following address %s\n" %(host.name, host.IP()))
                 self.overall_info[host.name]['mgt_IP']=host.IP()
 
-        return (self.overall_info)
-        #self.store_overall_info()
-
-        #end of start() method
-
-
-    # def store_overall_info(self):
-
-    #     stro = json.dumps(self.overall_info)
-    #     if os.path.exists(self.OVERALL_INFO_FILE):
-    #         os.remove(self.OVERALL_INFO_FILE)
-    #     overall_file = open(self.OVERALL_INFO_FILE,'a+')
-    #     overall_file.write(stro+"\n")
-    #     overall_file.close()
-
+        return self.overall_info
 
     def configureVS(self):
         
