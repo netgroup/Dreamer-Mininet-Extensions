@@ -251,7 +251,7 @@ def topo(topology):
 
 
 def store_overall_info(my_info):
-
+    print "*** Storing overall_info in %s\n" % overall_info_file
     stro = json.dumps(my_info)
     if os.path.exists(overall_info_file):
         os.remove(overall_info_file)
