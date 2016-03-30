@@ -29,6 +29,8 @@
 # This code has been taken from mininet's example bind.py, but we had to fix some stuff
 # because some thing don't work properly (for example xterm)
 
+ENABLE_SEGMENT_ROUTING = False
+
 import sys
 import shutil
 import os
@@ -105,7 +107,7 @@ class OSHI(HostWithPrivateDirs):
 
 	OF_V = "OpenFlow13"
 
-	SR = False
+	SR = ENABLE_SEGMENT_ROUTING
 	SR_exec = '/usr/bin/fpm-of.bin'
 	SR_path = '/usr/bin/'
 	
