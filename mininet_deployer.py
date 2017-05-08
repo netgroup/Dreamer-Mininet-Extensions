@@ -76,7 +76,8 @@ def topo(topology):
         print "*** Build Topology From Parsed File"
         print "*** Topology file : ", topology 
         print "*** NodeInfo file: ", overall_info_file
-    parser = TopoParser(topology, verbose = False)
+        print "*** Topology format version: ", tf_version
+    parser = TopoParser(topology, verbose = True, version=tf_version)
     ppsubnets = parser.getsubnets()
     #NB a submet could include multiple links if a legacy switch is used
     # currently only the first link is considered, therefore
@@ -245,9 +246,9 @@ def topo(topology):
     
     my_info = net.start()
     store_overall_info(my_info)
-
-    CLI(net)
-    net.stop()
+    if tf_version == 1:
+        CLI(net)
+        net.stop()
 
 
 def store_overall_info(my_info):
@@ -259,17 +260,31 @@ def store_overall_info(my_info):
     overall_file.write(stro+"\n")
     overall_file.close()
 
+def clean_all():
+    net = MininetOSHI(True)
+    net.stop()
 
 def parse_cmd_line():
     parser = argparse.ArgumentParser(description='Mininet Extensions')
-    parser.add_argument('--topology', dest='topoInfo', action='store', default='topo:topo1.json', help='topo:param see README for further details')
-    parser.add_argument('--nodeinfo', dest='nodeInfo', action='store', default=DEFAULT_OVERALL_INFO_FILE, help='file that stores the node info to be processed by node.js')
+    parser.add_argument('--topology', dest='topoInfo', action='store', default='topo/version2.json', help='topo:param see README for further details')
+    parser.add_argument('--nodeinfo', dest='nodeInfo', action='store', default= DEFAULT_OVERALL_INFO_FILE, help='file that stores the node info to be processed by node.js')
+    parser.add_argument('--version', dest='version', action='store', default=1, help='topology format version')
+    parser.add_argument('--stop-all', dest='clean_all',action='store_true', help='Clean all mininet environment')
+
     args = parser.parse_args()
-    if len(sys.argv)==1:
+    
+    if args.clean_all:
+        clean_all()
+        sys.exit(1)
+
+    if len(sys.argv)==1 and args.clean_all == False:
             parser.print_help()
             sys.exit(1)
     topo_data = args.topoInfo  
+
     global overall_info_file
+    global tf_version 
+    tf_version = args.version
     overall_info_file =  args.nodeInfo
     return (topo_data)
 
