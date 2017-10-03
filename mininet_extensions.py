@@ -571,7 +571,7 @@ class MininetOSHI(Mininet):
 	  	line1 = 'VTYSH_PAGER=more\n'
 	  	config = open( cfile ).read()
 	  	if ( line1 ) not in config:
-			info( '*** Adding %s to %s\n' %(line1.strip(), 'to', cfile))
+			info( '*** Adding %s to %s\n' %(line1.strip(), cfile))
 			with open( cfile, 'a' ) as f:
 		  		f.write( line1 )
 		  	f.close();
