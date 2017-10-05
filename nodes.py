@@ -38,7 +38,7 @@ import re
 import time
 from subprocess import Popen,PIPE
 
-from mininet.node import Host, OVSKernelSwitch, Node, HostWithPrivateDirs
+from mininet.node import Host, OVSKernelSwitch, Node
 from mininet.log import info, error
 
 from coexistence_mechanisms import *
@@ -90,7 +90,7 @@ class InBandController(IPHost):
 	
 # Class that inherits from PrivateHost and extends it with 
 # OSHI functionalities
-class OSHI(HostWithPrivateDirs):
+class OSHI(Host):
 
 	# XXX
 	zebra_exec = '/usr/lib/quagga/zebra'
@@ -113,7 +113,7 @@ class OSHI(HostWithPrivateDirs):
 	
 	def __init__(self, name, loopback, CR, cluster_id, *args, **kwargs ):
 		dirs = ['/var/log/', '/var/log/quagga', '/var/run', '/var/run/quagga', '/var/run/openvswitch', '/var/run/sshd']
-		HostWithPrivateDirs.__init__(self, name, privateDirs=dirs, *args, **kwargs )
+		Host.__init__(self, name, privateDirs=dirs, *args, **kwargs )
 		self.loopback = loopback
 
 		if cluster_id == "default":
@@ -533,14 +533,14 @@ class OSHI(HostWithPrivateDirs):
 		data = intf.split('-')
 		return int(data[1][3:])
 
-class VSF(HostWithPrivateDirs):
+class VSF(Host):
 
 	ovs_initd = "/etc/init.d/openvswitchd"
 	baseDIR = "/tmp"
 	
 	def __init__(self, name, *args, **kwargs ):
 		dirs = ['/var/log/', '/var/run', '/var/run/openvswitch']
-		HostWithPrivateDirs.__init__(self, name, privateDirs=dirs, *args, **kwargs )
+		Host.__init__(self, name, privateDirs=dirs, *args, **kwargs )
 		self.path_ovs = "%s/%s/ovs" %(self.baseDIR, self.name)
 	
 		
@@ -650,14 +650,14 @@ class VSF(HostWithPrivateDirs):
 		data = intf.split('-')
 		return int(data[1][3:])
 
-class VS(HostWithPrivateDirs):
+class VS(Host):
 
 	ovs_initd = "/etc/init.d/openvswitchd"
 	baseDIR = "/tmp"
 	
 	def __init__(self, name, *args, **kwargs ):
 		dirs = ['/var/log/', '/var/run', '/var/run/openvswitch']
-		HostWithPrivateDirs.__init__(self, name, privateDirs=dirs, *args, **kwargs )
+		Host.__init__(self, name, privateDirs=dirs, *args, **kwargs )
 		self.path_ovs = "%s/%s/ovs" %(self.baseDIR, self.name)
 	
 		
@@ -719,13 +719,13 @@ class VS(HostWithPrivateDirs):
 		data = intf.split('-')
 		return int(data[1][3:])
 
-# Class that inherits from HostWithPrivateDirs and extends it with 
+# Class that inherits from Host and extends it with 
 # Router functionalities
-class Router(HostWithPrivateDirs):
+class Router(Host):
 
 	def __init__(self, name, loopback, *args, **kwargs ):
 		dirs = ['/var/log/', '/var/log/quagga', '/var/run', '/var/run/quagga']
-		HostWithPrivateDirs.__init__(self, name, privateDirs=dirs, *args, **kwargs )
+		Host.__init__(self, name, privateDirs=dirs, *args, **kwargs )
 		self.loopback = loopback
 
 
