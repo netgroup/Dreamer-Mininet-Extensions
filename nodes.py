@@ -93,9 +93,9 @@ class InBandController(IPHost):
 class OSHI(Host):
 
 	# XXX
-	zebra_exec = '/usr/lib/quagga6/zebra'
+	zebra_exec = '/usr/lib/quagga/zebra'
 	ospfd_exec = '/usr/lib/quagga/ospfd'
-	zebra_exec_2 = '/usr/sbin/zebra6'
+	zebra_exec_2 = '/usr/sbin/zebra'
 	ospfd_exec_2 = '/usr/sbin/ospfd'
 	quaggaPath_msg = '/usr/lib/quagga/ OR /usr/sbin/'
 
