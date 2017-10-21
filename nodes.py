@@ -205,7 +205,7 @@ class OSHI(Host):
 		modinfo = root.cmd("modinfo openvswitch | grep version: |awk -F':' '{print $2}' | awk '{ gsub (\" \", \"\", $0); print}'")
 		versions = modinfo.split("\n")
 		version = versions[0]
-		print "modinfo openviswitch" + version
+		print "modinfo openviswitch : " + version
 		# SS 2017-10-21 I've disabled the version check because in the packaged openvswitch there is no version info
 		# modversion = float(version[:3])
 		# if modversion < 2.3:
@@ -215,6 +215,7 @@ class OSHI(Host):
 		vswitchdinfo = root.cmd("ovs-vswitchd --version | grep ovs-vswitchd |awk -F')' '{print $2}' | awk '{ gsub (\" \", \"\", $0); print}'")
 		versions = vswitchdinfo.split("\n")
 		version = versions[0]
+		print "ovs-vswitchd --version : " + version
 		vswitchdversion = float(version[:3])
 		if vswitchdversion < 2.3:
 			error( 'OVS vswitchd does not respect version requirement\nPlease check your OVS installation\n' )
