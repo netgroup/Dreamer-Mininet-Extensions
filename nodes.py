@@ -93,9 +93,13 @@ class InBandController(IPHost):
 class OSHI(Host):
 
 	# XXX
-	zebra_exec = '/usr/lib/quagga/zebra'
+	zebra_exec = '/usr/lib/quagga6/zebra'
 	ospfd_exec = '/usr/lib/quagga/ospfd'
-	quaggaPath = '/usr/lib/quagga/'
+	zebra_exec_2 = '/usr/sbin/zebra6'
+	ospfd_exec_2 = '/usr/sbin/ospfd'
+	quaggaPath_msg = '/usr/lib/quagga/ OR /usr/sbin/'
+
+
 
 	ovs_initd = "/etc/init.d/openvswitchd"
 
@@ -181,14 +185,20 @@ class OSHI(Host):
 		root = Node( 'root', inNamespace=False )
 		zebra = root.cmd('ls %s 2> /dev/null | wc -l' % self.zebra_exec)
 		if '1' not in zebra:
-			error( 'Cannot find required executable zebra\nPlease make sure that Zebra is properly installed in ' + self.quaggaPath + '\n'
-				   'Otherwise change quaggaPath variable according to your configuration\n' )
-			exit( 1 )
+			self.zebra_exec = self.zebra_exec_2
+			zebra = root.cmd('ls %s 2> /dev/null | wc -l' % self.zebra_exec)
+			if '1' not in zebra:
+				error( 'Cannot find required executable zebra\nPlease make sure that Zebra is properly installed in ' + self.quaggaPath_msg + '\n'
+				   		'Otherwise change configuration in Dreamer-Mininet-Extensions/nodes.py \n' )
+				exit( 1 )
 		ospfd = root.cmd('ls %s 2> /dev/null | wc -l' % self.ospfd_exec)
 		if '1' not in ospfd:
-			error( 'Cannot find required executable ospfd\nPlease make sure that OSPFD is properly installed in ' + self.quaggaPath + '\n'
-				   'Otherwise change quaggaPath variable according to your configuration\n' )
-			exit( 1 )
+			self.ospfd_exec = self.ospfd_exec_2
+			ospfd = root.cmd('ls %s 2> /dev/null | wc -l' % self.ospfd_exec)
+			if '1' not in ospfd:
+				error( 'Cannot find required executable ospfd\nPlease make sure that OSPFD is properly installed in ' + self.quaggaPath_msg + '\n'
+					   'Otherwise change configuration in Dreamer-Mininet-Extensions/nodes.py \n' )
+				exit( 1 )
 
 	def checkOVS(self):
 		root = Node('root', inNamespace=False)
