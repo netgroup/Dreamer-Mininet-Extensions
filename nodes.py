@@ -183,20 +183,20 @@ class OSHI(Host):
 
 	def checkQuagga(self):
 		root = Node( 'root', inNamespace=False )
-		zebra = root.cmd('ls %s 2> /dev/null | wc -l' % self.zebra_exec)
+		zebra = root.cmd('ls %s 2> /dev/null | wc -l' % OSHI.zebra_exec)
 		if '1' not in zebra:
-			self.zebra_exec = self.zebra_exec_2
-			zebra = root.cmd('ls %s 2> /dev/null | wc -l' % self.zebra_exec)
+			OSHI.zebra_exec = OSHI.zebra_exec_2
+			zebra = root.cmd('ls %s 2> /dev/null | wc -l' % OSHI.zebra_exec)
 			if '1' not in zebra:
-				error( 'Cannot find required executable zebra\nPlease make sure that Zebra is properly installed in ' + self.quaggaPath_msg + '\n'
+				error( 'Cannot find required executable zebra\nPlease make sure that Zebra is properly installed in ' + OSHI.quaggaPath_msg + '\n'
 				   		'Otherwise change configuration in Dreamer-Mininet-Extensions/nodes.py \n' )
 				exit( 1 )
-		ospfd = root.cmd('ls %s 2> /dev/null | wc -l' % self.ospfd_exec)
+		ospfd = root.cmd('ls %s 2> /dev/null | wc -l' % OSHI.ospfd_exec)
 		if '1' not in ospfd:
-			self.ospfd_exec = self.ospfd_exec_2
-			ospfd = root.cmd('ls %s 2> /dev/null | wc -l' % self.ospfd_exec)
+			OSHI.ospfd_exec = OSHI.ospfd_exec_2
+			ospfd = root.cmd('ls %s 2> /dev/null | wc -l' % OSHI.ospfd_exec)
 			if '1' not in ospfd:
-				error( 'Cannot find required executable ospfd\nPlease make sure that OSPFD is properly installed in ' + self.quaggaPath_msg + '\n'
+				error( 'Cannot find required executable ospfd\nPlease make sure that OSPFD is properly installed in ' + OSHI.quaggaPath_msg + '\n'
 					   'Otherwise change configuration in Dreamer-Mininet-Extensions/nodes.py \n' )
 				exit( 1 )
 
@@ -528,8 +528,8 @@ class OSHI(Host):
 		self.cmd("chmod -R 777 /var/run/quagga")	
 		self.cmd("chmod -R 777 %s" %(self.path_quagga))	
 
-		self.cmd("%s -f %s/zebra.conf -A 127.0.0.1 &" %(self.zebra_exec, self.path_quagga))
-		self.cmd("%s -f %s/ospfd.conf -A 127.0.0.1 &" %(self.ospfd_exec, self.path_quagga))
+		self.cmd("%s -f %s/zebra.conf -A 127.0.0.1 &" %(OSHI.zebra_exec, self.path_quagga))
+		self.cmd("%s -f %s/ospfd.conf -A 127.0.0.1 &" %(OSHI.ospfd_exec, self.path_quagga))
 
 		if OSHI.SR == True:
 			self.cmd("fpm-of.bin -b %s &" % self.name)
