@@ -246,10 +246,9 @@ def topo(topology):
     
     my_info = net.start()
     store_overall_info(my_info)
-    if tf_version == 1:
+    if not no_cli:
         CLI(net)
         net.stop()
-
 
 def store_overall_info(my_info):
 
@@ -270,6 +269,7 @@ def parse_cmd_line():
     parser.add_argument('--nodeinfo', dest='nodeInfo', action='store', default= DEFAULT_OVERALL_INFO_FILE, help='file that stores the node info to be processed by node.js')
     parser.add_argument('--version', dest='version', action='store', default=1, help='topology format version')
     parser.add_argument('--stop-all', dest='clean_all',action='store_true', help='Clean all mininet environment')
+    parser.add_argument('--no-cli', dest='no_cli',action='store_true', help='Do not show Mininet CLI')
 
     args = parser.parse_args()
     
@@ -284,8 +284,10 @@ def parse_cmd_line():
 
     global overall_info_file
     global tf_version 
+    global no_cli
     tf_version = args.version
     overall_info_file =  args.nodeInfo
+    no_cli = args.no_cli
     return (topo_data)
 
 if __name__ == '__main__':
