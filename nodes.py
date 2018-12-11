@@ -50,7 +50,8 @@ from ingress_classifications import *
 class IPHost(Host):
 
 	def __init__(self, name, *args, **kwargs ):
-		Host.__init__( self, name, *args, **kwargs )
+		dirs = ['/var/run', '/var/run/sshd']
+		Host.__init__( self, name, privateDirs=dirs, *args, **kwargs )
 		self.id = self.newId()
 
 	def newId( self ):
@@ -76,11 +77,13 @@ class IPHost(Host):
 		self.cmd( 'ip route add %s via %s dev %s' %(net, gw, intf) )
 
 		# Running SSHD
-		#self.cmd('chown root:root /var/run/sshd')
-		#self.cmd('chmod 711 /var/run/sshd')
-		self.cmd('/usr/sbin/sshd -o UseDNS=no -u0')	
+		#print ("starting SSHD line 79")
+		self.cmd('chown root:root /var/run/sshd')
+		self.cmd('chmod 711 /var/run/sshd')
+		self.cmd('/usr/sbin/sshd -o UseDNS=no -u0')
 
-# Simple Host with IP and TCP port data
+
+# Simple: Host with IP and TCP port data
 class InBandController(IPHost):
 
 	def __init__(self, name, tcp_port, *args, **kwargs ):
@@ -227,9 +230,10 @@ class OSHI(Host):
 		# 	exit( 1)
 
 		openvswitchd = root.cmd('ls %s 2> /dev/null | wc -l' % self.ovs_initd)
-		if '1' not in openvswitchd:
-			error( 'Cannot find required executable /etc/init.d/openvswitchd\nPlease make sure that OVS is properly installed\n')
-			exit( 1 )
+		# SS 2018-12-10 commented the following lines because we are using the openvswitch that comes with mininet
+		#if '1' not in openvswitchd:
+		#	error( 'Cannot find required executable /etc/init.d/openvswitchd\nPlease make sure that OVS is properly installed\n')
+		#	exit( 1 )
 
 	def start_pw( self, table, pws_data = []):
 		
@@ -278,6 +282,7 @@ class OSHI(Host):
 			sys.exit(-2)
 
 		# Running SSHD
+		#print ("starting SSHD line 283")		
 		self.cmd('chown root:root /var/run/sshd')
 		self.cmd('chmod 711 /var/run/sshd')
 		self.cmd('/usr/sbin/sshd -o UseDNS=no -u0')
