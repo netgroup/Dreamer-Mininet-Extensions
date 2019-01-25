@@ -82,6 +82,46 @@ class IPHost(Host):
 		self.cmd('chmod 711 /var/run/sshd')
 		self.cmd('/usr/sbin/sshd -o UseDNS=no -u0')
 
+# Simple Host with defaultVia
+# QUICK SOLUTION TO THE PROBLEM TO SYSTEMD CRASH
+# A COPY OF IPHost HAS BEEN MADE... A CLEANER SOLUTION
+# SHOULD BE IMPLEMENTED
+class IPHostMgmt(Host):
+
+	def __init__(self, name, *args, **kwargs ):
+		#dirs = ['/var/run', '/var/run/sshd']
+		# NO PRIVATE DIRS, BECAUSE IT IS IN THE VM Namespace
+		Host.__init__( self, name, *args, **kwargs )
+		self.id = self.newId()
+
+	def newId( self ):
+		"Derive id from name, s1 -> 1"
+		try:
+			hid = int( re.findall( r'\d+', self.name )[ 0 ] )
+			hid = hex( hid )[ 2: ]
+			hid = '0' * ( 16 - len( hid ) ) + hid
+			return hid
+		except IndexError:
+			raise Exception( 'Unable to derive default ID - '
+							'please either specify a id or use a '
+							'canonical name such as cer23.' )
+	
+	def start(self, defaultVia):
+		info("%s " % self.name)
+		data = defaultVia.split("#")
+		gw = data[0].split("/")[0]
+		intf = data[1]
+		net = data[2]
+		#self.cmd('ip link set dev %s up' % intf)
+		#self.cmd( 'ip route del default' )
+		self.cmd( 'ip route add %s via %s dev %s' %(net, gw, intf) )
+
+		# Running SSHD
+		#print ("starting SSHD line 79")
+		#self.cmd('chown root:root /var/run/sshd')
+		#self.cmd('chmod 711 /var/run/sshd')
+		#self.cmd('/usr/sbin/sshd -o UseDNS=no -u0')
+
 
 # Simple: Host with IP and TCP port data
 class InBandController(IPHost):

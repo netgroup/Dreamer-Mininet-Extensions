@@ -42,7 +42,7 @@ from mininet.log import lg, info, error
 from mininet.util import quietRun
 from mininet.term import cleanUpScreens, makeTerms
 
-from nodes import OSHI, Router, LegacyL2Switch, IPHost, InBandController, VSF, VS
+from nodes import OSHI, Router, LegacyL2Switch, IPHost, IPHostMgmt, InBandController, VSF, VS
 from utility import fixIntf, unmountAll, VTEPAllocator, VTEP
 from coexistence_mechanisms import *
 
@@ -286,7 +286,7 @@ class MininetOSHI(Mininet):
         """Adds the node for the management connection between the Host and all the Mininet VMs"""
         if not name:
             name = self.newMgmtName()
-        mgmt = Mininet.addHost(self, name, cls=IPHost, inNamespace=False)
+        mgmt = Mininet.addHost(self, name, cls=IPHostMgmt, inNamespace=False)
         self.mgmt = mgmt
         self.nodes_in_rn.append(mgmt)
 
