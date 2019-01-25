@@ -259,10 +259,17 @@ class OSHI(Host):
 		versions = vswitchdinfo.split("\n")
 		version = versions[0]
 		print "ovs-vswitchd --version : " + version
-		vswitchdversion = float(version[:3])
-		if vswitchdversion < 2.3:
+
+		#vswitchdversion = float(version[:3])
+		#if vswitchdversion < 2.3:
+        major = version.split(".")[0]
+        minor = version.split(".")[1]
+        if major < 2:
 			error( 'OVS vswitchd does not respect version requirement\nPlease check your OVS installation\n' )
 			exit( 1 )
+        if minor < 3:
+			error( 'OVS vswitchd does not respect version requirement\nPlease check your OVS installation\n' )
+			exit( 1 )		
 
 		# SS 2017-10-21 I've disabled the version check because in the packaged openvswitch there is no version info
 		# if modversion != vswitchdversion:
