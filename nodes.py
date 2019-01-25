@@ -262,12 +262,12 @@ class OSHI(Host):
 
 		#vswitchdversion = float(version[:3])
 		#if vswitchdversion < 2.3:
-        major = version.split(".")[0]
-        minor = version.split(".")[1]
-        if major < 2:
+		major = version.split(".")[0]
+		minor = version.split(".")[1]
+		if major < 2:
 			error( 'OVS vswitchd does not respect version requirement\nPlease check your OVS installation\n' )
 			exit( 1 )
-        if minor < 3:
+		if minor < 3:
 			error( 'OVS vswitchd does not respect version requirement\nPlease check your OVS installation\n' )
 			exit( 1 )		
 
